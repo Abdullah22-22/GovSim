@@ -33,9 +33,9 @@ Monthly  → SP3 × 5 → SP4 → SP5
 ## Project Structure
 
 ```
-SmartCity/
+GovSim/
 │
-├── src/main/java/smartcity/
+├── src/main/java/com/govsim/govsim/
 │   │
 │   ├── model/                         # Shared data classes — used everywhere
 │   │   ├── Event.java                 # One incident: ministry, severity, day, resolved
@@ -50,7 +50,8 @@ SmartCity/
 │   │   ├── EventGenerator.java        # SP1: generates random Events
 │   │   ├── EventRouter.java           # SP2: routes Event to correct Ministry
 │   │   ├── ReportGenerator.java       # SP5: builds monthly & annual reports
-│   │   └── AnnualReview.java          # Yearly minister evaluation
+│   │   ├── AnnualReview.java          # Yearly minister evaluation
+│   │   └── AIAdvisor.java             # Suggests decisions to president
 │   │
 │   ├── ministry/                      # SP3 — 5 Ministry service points
 │   │   ├── Ministry.java              # Abstract base class
@@ -81,11 +82,11 @@ SmartCity/
 │   │   ├── dashboard.fxml
 │   │   └── alert.fxml
 │   ├── style.css                      # App stylesheet
-│   ├── smartcity.db                   # SQLite database file
+│   ├── govsim.db                      # SQLite database file
 │   └── config.properties             # Default simulation settings
 │
 ├── pom.xml                            # Maven: JavaFX + SQLite dependencies
-└── README.md                          # Project description
+└── README.md                          # Project description                       # Project description
 ```
 
 
