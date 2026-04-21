@@ -1,6 +1,6 @@
 package com.govsim.govsim.simulation;
 
-// import com.govsim.govsim.ministry.*;
+import com.govsim.govsim.ministry.*;
 import com.govsim.govsim.model.*;
 import java.util.List;
 
@@ -21,7 +21,7 @@ public class SimuEngine {
         // Register all ministries — SP3
         // router.addMinistry("Interior", new InteriorMinistry());
         // router.addMinistry("Defense", new DefenseMinistry());
-        // router.addMinistry("Finance", new FinanceMinistry());
+        router.addMinistry("Finance", new FinanceMinistry());
         // router.addMinistry("Population", new PopulationMinistry());
         // router.addMinistry("Health", new HealthMinistry());
     }
