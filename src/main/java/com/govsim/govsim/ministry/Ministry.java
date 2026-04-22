@@ -6,11 +6,13 @@ import com.govsim.govsim.model.Severity;
 import java.util.ArrayList;
 import java.util.List;
 
+
 /** Abstract base class for all ministries — SP3 */
 public abstract class Ministry {
 
     protected String name;
     protected List<Event> eventLog = new ArrayList<>();
+    protected President president;
 
     public Ministry(String name) {
         this.name = name;

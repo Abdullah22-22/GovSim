@@ -3,6 +3,8 @@ package com.govsim.govsim.simulation;
 // import com.govsim.govsim.ministry.*;
 import com.govsim.govsim.model.*;
 import java.util.List;
+import com.govsim.govsim.ministry.DefenseMinistry;
+import com.govsim.govsim.president.President;
 
 /** Main simulation engine — runs the full day loop */
 public class SimuEngine {
@@ -17,6 +19,12 @@ public class SimuEngine {
         this.city = new City(startBudget);
         this.generator = new EventGenerator();
         this.router = new EventRouter();
+
+        // President (connected to city)
+        President president = new President(city);
+
+        // Register ministries
+        router.addMinistry("Defense", new DefenseMinistry(president));
 
         // Register all ministries — SP3
         // router.addMinistry("Interior", new InteriorMinistry());
