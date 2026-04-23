@@ -7,6 +7,9 @@ public class City {
     private double satisfaction;
     private int month;
     private int year;
+    // Monthly fixed income/expenses
+    private double monthlyIncome = 8500;
+    private double monthlyExpenses = 12000;
 
     /** Creates a new City */
     public City(double budget) {
@@ -14,6 +17,7 @@ public class City {
         this.satisfaction = 100.0;
         this.month = 1;
         this.year = 1;
+
     }
 
     // Getters
@@ -31,6 +35,11 @@ public class City {
 
     public int getYear() {
         return year;
+    }
+
+    public void applyMonthlyFinance() {
+        budget += monthlyIncome;
+        budget -= monthlyExpenses;
     }
 
     // Setters

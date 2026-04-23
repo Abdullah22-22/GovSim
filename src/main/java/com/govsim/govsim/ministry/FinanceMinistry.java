@@ -12,6 +12,9 @@ import java.util.Random;
 public class FinanceMinistry extends Ministry {
 
     private static Random random = new Random();
+    // Variable income/expenses
+    private double variableIncome = 0;
+    private double variableExpenses = 0;
 
     private static final List<String> NORMAL_EVENTS = Arrays.asList(
             "Tax collection delayed",
@@ -29,6 +32,15 @@ public class FinanceMinistry extends Ministry {
 
     public FinanceMinistry() {
         super("Finance");
+    }
+
+    // President changes these later
+    public void addVariableIncome(double amount) {
+        variableIncome += amount;
+    }
+
+    public void addVariableExpense(double amount) {
+        variableExpenses += amount;
     }
 
     @Override
@@ -56,7 +68,7 @@ public class FinanceMinistry extends Ministry {
                 ? DANGEROUS_EVENTS
                 : NORMAL_EVENTS;
         String desc = list.get(random.nextInt(list.size()));
-        return new Event(desc, desc, severity, day);
+        return new Event(name, desc, severity, day);
     }
 
 }
