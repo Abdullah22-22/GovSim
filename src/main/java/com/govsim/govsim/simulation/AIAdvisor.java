@@ -91,7 +91,7 @@ public class AIAdvisor {
     // Returns KEEP or FIRE decision with reason
     // ─────────────────────────────────────────────────────
 
-    public String suggestForAnnualReview(Minister minister, double avgRating) {
+    public String tForAnnualReview(Minister minister, double avgRating) {
         String prompt = String.format(
                 "You are an AI advisor in a city simulation game. " +
                         "Minister '%s' manages the %s ministry. " +
