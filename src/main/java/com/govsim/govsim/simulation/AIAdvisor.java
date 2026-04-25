@@ -4,6 +4,8 @@ import com.govsim.govsim.model.City;
 import com.govsim.govsim.model.Event;
 import com.govsim.govsim.model.Minister;
 import com.govsim.govsim.model.Report;
+import com.govsim.govsim.president.DecisionOption;
+import com.govsim.govsim.president.DecisionType;
 import io.github.cdimascio.dotenv.Dotenv;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -12,46 +14,46 @@ import java.net.http.HttpResponse;
 import java.util.List;
 
 /**
- * AI Advisor — connects to Gemini API and gives suggestions in 3 cases:
- * 1. Dangerous event — suggests 3 options with cost based on city state
- * 2. Monthly report — suggests ADD / CUT / KEEP budget per ministry
- * 3. Annual review — suggests KEEP or FIRE minister
+ * AI Advisor — connects to Gemini and returns DecisionOption arrays:
+ * 1. Dangerous event  — 3 DecisionOptions with cost
+ * 2. Monthly report   — DecisionOptions per ministry (ADD/CUT/KEEP)
+ * 3. Annual review    — 1 DecisionOption (KEEP/FIRE)
  */
 public class AIAdvisor {
 
-    // Load API key and model from .env file
-    private static final Dotenv dotenv = Dotenv.load();
-    private static final String API_KEY = dotenv.get("GEMINI_API_KEY");
-    private static final String MODEL = dotenv.get("GEMINI_MODEL");
-    private static final String API_URL = "https://generativelanguage.googleapis.com/v1beta/models/" +
-            MODEL + ":generateContent?key=" + API_KEY;
+    // Load API key and model from .env
+    private static final Dotenv  dotenv  = Dotenv.load();
+    private static final String  API_KEY = dotenv.get("GEMINI_API_KEY");
+    private static final String  MODEL   = dotenv.get("GEMINI_MODEL");
+    private static final String  API_URL =
+        "https://generativelanguage.googleapis.com/v1beta/models/" +
+        MODEL + ":generateContent?key=" + API_KEY;
 
     private final HttpClient client = HttpClient.newHttpClient();
 
     // ─────────────────────────────────────────────────────
     // CASE 1 — Dangerous Event
     // Sends event + city state to Gemini
-    // Returns 3 options with realistic cost based on budget
+    // Returns 3 DecisionOptions with realistic costs
     // ─────────────────────────────────────────────────────
 
-    public String[] suggestForEvent(Event event, City city) {
+    public DecisionOption[] suggestForEvent(Event event, City city) {
         String prompt = String.format(
-                "You are an AI advisor in a city simulation game. " +
-                        "A DANGEROUS event occurred in the %s ministry: '%s'. " +
-                        "Current city state: Budget=%.0f euros, Satisfaction=%.0f%%. " +
-                        "Based on the budget, suggest exactly 3 realistic options for the president. " +
-                        "If budget is low, keep costs small. If budget is high, allow bigger responses. " +
-                        "Format EXACTLY as (no extra text):\n" +
-                        "Option 1: [title] - [description] - Cost: [number]\n" +
-                        "Option 2: [title] - [description] - Cost: [number]\n" +
-                        "Option 3: [title] - [description] - Cost: [number]\n" +
-                        "Option 1 must be cheapest (0 or very low). Option 3 must be most expensive.",
-                event.getMinistry(),
-                event.getDescription(),
-                city.getBudget(),
-                city.getSatisfaction());
+            "You are an AI advisor in a city simulation game. " +
+            "A DANGEROUS event occurred in the %s ministry: '%s'. " +
+            "City state: Budget=%.0f euros, Satisfaction=%.0f%%. " +
+            "Suggest exactly 3 options. Adjust costs based on budget. " +
+            "Format EXACTLY as (3 lines, no extra text):\n" +
+            "TITLE: [title] | DESC: [description] | COST: [number]\n" +
+            "TITLE: [title] | DESC: [description] | COST: [number]\n" +
+            "TITLE: [title] | DESC: [description] | COST: [number]\n" +
+            "Line 1 = cheapest (0). Line 3 = most expensive.",
+            event.getMinistry(), event.getDescription(),
+            city.getBudget(), city.getSatisfaction()
+        );
 
-        return callGemini(prompt, 3);
+        String raw = callGemini(prompt);
+        return parseOptions(raw, DecisionType.DANGEROUS_EVENT, 3);
     }
 
     // ─────────────────────────────────────────────────────
@@ -60,136 +62,143 @@ public class AIAdvisor {
     // Returns ADD / CUT / KEEP suggestion per ministry
     // ─────────────────────────────────────────────────────
 
-    public String[] suggestForMonthlyReport(List<Report> reports, City city) {
-        // Build report summary to send to Gemini
+    public DecisionOption[] suggestForMonthlyReport(List<Report> reports, City city) {
+        // Build ministry summary to send to Gemini
         StringBuilder summary = new StringBuilder();
         for (Report r : reports) {
             summary.append(String.format(
-                    "%s ministry: rating=%.0f%%, resolved=%d, ignored=%d. ",
-                    r.getMinistry(),
-                    r.getRating(),
-                    r.getResolved(),
-                    r.getUnresolved()));
+                "%s: rating=%.0f%% resolved=%d ignored=%d. ",
+                r.getMinistry(), r.getRating(),
+                r.getResolved(), r.getUnresolved()
+            ));
         }
+
         String prompt = String.format(
-                "You are an AI advisor in a city simulation game. " +
-                        "Monthly ministry performance: %s " +
-                        "City state: Budget=%.0f euros, Satisfaction=%.0f%%. " +
-                        "For each ministry, suggest one of: ADD budget, CUT budget, or KEEP as is. " +
-                        "Base your suggestion on performance rating and current city budget. " +
-                        "Format EXACTLY as (one line per ministry, no extra text):\n" +
-                        "[MinistryName]: [ADD/CUT/KEEP] - [amount in euros if ADD or CUT] - [short reason]",
-                summary.toString(),
-                city.getBudget(),
-                city.getSatisfaction());
-        return callGemini(prompt, reports.size());
+            "You are an AI advisor in a city simulation game. " +
+            "Monthly ministry performance: %s " +
+            "City budget: %.0f euros. Satisfaction: %.0f%%. " +
+            "Suggest exactly %d budget actions (one per ministry). " +
+            "Format EXACTLY as (one line per ministry, no extra text):\n" +
+            "TITLE: [ADD/CUT/KEEP] | DESC: [ministry - short reason] | COST: [number]\n" +
+            "COST = amount to add or cut. 0 if KEEP.",
+            summary.toString(), city.getBudget(),
+            city.getSatisfaction(), reports.size()
+        );
+
+        String raw = callGemini(prompt);
+        return parseOptions(raw, DecisionType.MONTHLY_BUDGET, reports.size());
     }
 
     // ─────────────────────────────────────────────────────
     // CASE 3 — Annual Review
     // Sends minister performance to Gemini
-    // Returns KEEP or FIRE decision with reason
+    // Returns KEEP or FIRE with reason
     // ─────────────────────────────────────────────────────
 
-    public String tForAnnualReview(Minister minister, double avgRating) {
+    public DecisionOption suggestForAnnualReview(Minister minister, double avgRating) {
         String prompt = String.format(
-                "You are an AI advisor in a city simulation game. " +
-                        "Minister '%s' manages the %s ministry. " +
-                        "Their average performance rating this year: %.0f%%. " +
-                        "Warnings received: %d. " +
-                        "Should the president KEEP or FIRE this minister? " +
-                        "Format EXACTLY as (no extra text):\n" +
-                        "Decision: [KEEP/FIRE] - [one sentence reason]",
-                minister.getName(), minister.getMinistry(),
-                avgRating, minister.getWarnings());
+            "You are an AI advisor in a city simulation game. " +
+            "Minister '%s' manages the %s ministry. " +
+            "Average performance this year: %.0f%%. Warnings: %d. " +
+            "Should the president KEEP or FIRE this minister? " +
+            "Format EXACTLY as (one line, no extra text):\n" +
+            "TITLE: [KEEP/FIRE] | DESC: [one sentence reason] | COST: 0",
+            minister.getName(), minister.getMinistry(),
+            avgRating, minister.getWarnings()
+        );
 
-        String[] result = callGemini(prompt, 1);
+        String raw = callGemini(prompt);
+        DecisionOption[] result = parseOptions(raw, DecisionType.ANNUAL_REVIEW, 1);
         return result[0];
     }
 
     // ─────────────────────────────────────────────────────
-    // GEMINI API — sends prompt and returns response lines
+    // GEMINI API — sends prompt and returns raw text
     // ─────────────────────────────────────────────────────
-    private String[] callGemini(String prompt, int expectedLines) {
+
+    private String callGemini(String prompt) {
         try {
-            // Build request body
+            // Build JSON request body
             String body = """
-                    {
-                      "contents": [{
-                        "parts": [{
-                          "text": "%s"
-                        }]
-                      }]
-                    }
-                    """.formatted(prompt.replace("\"", "'").replace("\n", "\\n"));
+                {
+                  "contents": [{
+                    "parts": [{
+                      "text": "%s"
+                    }]
+                  }]
+                }
+                """.formatted(prompt.replace("\"", "'").replace("\n", "\\n"));
 
             // Send POST request to Gemini
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(API_URL))
-                    .header("Content-Type", "application/json")
-                    .POST(HttpRequest.BodyPublishers.ofString(body))
-                    .build();
+                .uri(URI.create(API_URL))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(body))
+                .build();
 
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response =
+                client.send(request, HttpResponse.BodyHandlers.ofString());
 
-            return parseResponse(response.body(), expectedLines);
+            return parseRawText(response.body());
 
         } catch (Exception e) {
             System.out.println("[AIAdvisor] Gemini error: " + e.getMessage());
-            return fallback(expectedLines);
+            return "";
         }
     }
 
-    // Parse Gemini JSON response and extract text lines
-    private String[] parseResponse(String json, int expectedLines) {
+    // Extract raw text from Gemini JSON response
+    private String parseRawText(String json) {
         try {
             int start = json.indexOf("\"text\": \"") + 9;
-            int end = json.lastIndexOf("\"");
-            String text = json.substring(start, end)
-                    .replace("\\n", "\n").trim();
+            int end   = json.lastIndexOf("\"");
+            return json.substring(start, end)
+                .replace("\\n", "\n").trim();
+        } catch (Exception e) {
+            return "";
+        }
+    }
 
-            if (expectedLines == 1)
-                return new String[] { text.split("\n")[0].trim() };
+    // Parse Gemini response into DecisionOption array
+    // Expected format per line: "TITLE: x | DESC: y | COST: 1234"
+    private DecisionOption[] parseOptions(String raw, DecisionType type, int count) {
+        DecisionOption[] options = new DecisionOption[count];
+        String[] lines = raw.split("\n");
+        int idx = 0;
 
-            // Split into lines and return expected count
-            String[] lines = text.split("\n");
-            String[] options = new String[expectedLines];
-            int count = 0;
-            for (String line : lines) {
-                if (!line.isBlank() && count < expectedLines) {
-                    options[count++] = line.trim();
-                }
+        for (String line : lines) {
+            if (line.isBlank() || idx >= count) continue;
+            try {
+                String title = extract(line, "TITLE:", "|").trim();
+                String desc  = extract(line, "DESC:",  "|").trim();
+                int cost     = Integer.parseInt(
+                    extract(line, "COST:", "\n")
+                        .replaceAll("[^0-9]", "").trim()
+                );
+                options[idx++] = new DecisionOption(type, title, desc, cost);
+            } catch (Exception e) {
+                options[idx++] = new DecisionOption(
+                    type, "OPTION " + (idx + 1), "No suggestion", 0
+                );
             }
-
-            if (count < expectedLines)
-                return fallback(expectedLines);
-            return options;
-
-        } catch (Exception e) {
-            return fallback(expectedLines);
         }
+
+        // Fallback if Gemini returned less than expected
+        while (idx < count) {
+            options[idx] = new DecisionOption(
+                type, "OPTION " + (idx + 1), "No suggestion", 0
+            );
+            idx++;
+        }
+
+        return options;
     }
 
-    // Extract cost number from Gemini response line
-    // Example: "Option 2: LOCKDOWN - Lock area - Cost: 4000" -> returns 4000
-    public double extractCost(String optionLine) {
-        try {
-            String lower = optionLine.toLowerCase();
-            int idx = lower.lastIndexOf("cost:") + 5;
-            String numStr = lower.substring(idx).replaceAll("[^0-9]", "").trim();
-            return Double.parseDouble(numStr);
-        } catch (Exception e) {
-            return 5000; // default cost if parsing fails
-        }
-    }
-
-    // Fallback if Gemini fails or is unreachable
-    private String[] fallback(int count) {
-        if (count == 1)
-            return new String[] { "Decision: KEEP - No data available." };
-        String[] f = new String[count];
-        for (int i = 0; i < count; i++)
-            f[i] = "Option " + (i + 1) + ": No suggestion available. - Cost: 0";
-        return f;
+    // Extracts text between two markers in a line
+    private String extract(String line, String from, String to) {
+        int start = line.indexOf(from) + from.length();
+        int end   = line.indexOf(to, start);
+        if (end == -1) end = line.length();
+        return line.substring(start, end);
     }
 }
