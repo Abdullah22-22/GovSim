@@ -8,6 +8,7 @@ public class City {
     private int month;
     private int year;
     // Monthly fixed income/expenses
+
     private double monthlyIncome = 50000;
     private double monthlyExpenses = 20000;
 
