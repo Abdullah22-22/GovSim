@@ -25,7 +25,7 @@ public class SimuEngine {
         this.president = new President(city);
 
         // Register all ministries — SP3
-        // registerMinistry(new InteriorMinistry());
+        registerMinistry(new InteriorMinistry());
         registerMinistry(new DefenseMinistry());
         registerMinistry(new FinanceMinistry());
         // registerMinistry(new HealthMinistry());
