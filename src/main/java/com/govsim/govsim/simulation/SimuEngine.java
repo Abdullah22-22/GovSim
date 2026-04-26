@@ -19,7 +19,7 @@ public class SimuEngine {
         this.router = new EventRouter();
 
         // Register all ministries — SP3
-        // router.addMinistry("Interior", new InteriorMinistry());
+        router.addMinistry("Interior", new InteriorMinistry());
         router.addMinistry("Defense", new DefenseMinistry());
         router.addMinistry("Finance", new FinanceMinistry());
         // router.addMinistry("Population", new PopulationMinistry());
