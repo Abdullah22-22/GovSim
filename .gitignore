@@ -6,4 +6,4 @@ target/
 build/
 
 # Ignore env files
-.env
+.env.env
