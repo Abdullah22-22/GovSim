@@ -20,16 +20,14 @@ public class InteriorMinistry extends Ministry {
             "Traffic violation spike",
             "Small protest in city center",
             "Noise complaints in neighborhood",
-            "Local dispute resolved"
-    );
+            "Local dispute resolved");
 
     private static final List<String> DANGEROUS_EVENTS = Arrays.asList(
             "Massive riot in downtown",
             "Terrorist activity suspected",
             "City-wide emergency declared",
             "Police overwhelmed by violence",
-            "Major prison break"
-    );
+            "Major prison break");
 
     public InteriorMinistry() {
         super("Interior");
@@ -47,8 +45,7 @@ public class InteriorMinistry extends Ministry {
     protected void handleDangerous(Event event) {
         escalated++;
 
-        System.out.println("[Interior] ESCALATING dangerous event: " + event.getDescription());
-        System.out.println("[Interior] No President implemented yet.");
+        System.out.println("[Interior] DANGEROUS — sending to President: " + event.getDescription());
     }
 
     @Override
@@ -60,7 +57,8 @@ public class InteriorMinistry extends Ministry {
         }
 
         double rating = 100.0 - (escalated * 15);
-        if (rating < 0) rating = 0;
+        if (rating < 0)
+            rating = 0;
 
         report.setRating(rating);
 
