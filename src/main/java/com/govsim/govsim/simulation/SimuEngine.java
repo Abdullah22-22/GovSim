@@ -28,7 +28,7 @@ public class SimuEngine {
         registerMinistry(new InteriorMinistry());
         registerMinistry(new DefenseMinistry());
         registerMinistry(new FinanceMinistry());
-        // registerMinistry(new HealthMinistry());
+        registerMinistry(new HealthMinistry());
         // registerMinistry(new PopulationMinistry());
     }
 
