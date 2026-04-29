@@ -1,0 +1,10 @@
+/*  
+This the Alert gui and its controller
+
+It will display the alert messaging and it system and various other things 
+
+but mostly this will be connected to the dashboard controller  gui 
+
+Starting for here
+
+*/
