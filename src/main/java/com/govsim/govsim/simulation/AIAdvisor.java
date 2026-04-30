@@ -157,6 +157,8 @@ public class AIAdvisor {
         int attempts = 0;
 
         while (attempts < API_KEYS.length) {
+            try { Thread.sleep(1500); }
+            catch (InterruptedException ignored) {}
             String apiKey = API_KEYS[currentKeyIndex];
             try {
                 String body = String.format("""

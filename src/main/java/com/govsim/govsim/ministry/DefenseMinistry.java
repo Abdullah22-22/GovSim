@@ -46,7 +46,9 @@ public class DefenseMinistry extends Ministry {
     @Override
     public Report generateReport(int month, int year) {
         Report report = new Report(name, month, year);
-        for (Event e : eventLog) report.addEvent(e);
+        double rating = eventLog.isEmpty() ? 100.0
+                : (report.getResolved() * 100.0 / report.getTotalEvents());
+        report.setRating(rating);
         return report;
     }
 
