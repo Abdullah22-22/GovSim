@@ -10,32 +10,34 @@ import java.util.Scanner;
 /** Main simulation engine — runs the full day loop */
 public class SimuEngine {
 
-    private final Scanner scanner = new Scanner(System.in);
-    private City city;
-    private EventGenerator generator;
-    private EventRouter router;
-    private President president;
-    private ReportGenerator reportGen = new ReportGenerator();
-    private List<Ministry> ministries = new ArrayList<>();
+    private final Scanner         scanner    = new Scanner(System.in);
+    private City                  city;
+    private EventGenerator        generator;
+    private EventRouter           router;
+    private President             president;
+    private ReportGenerator       reportGen  = new ReportGenerator();
+    private List<Ministry>        ministries = new ArrayList<>();
+    private List<Minister>        ministers  = new ArrayList<>();
 
     /** Setup simulation */
     public SimuEngine(double startBudget) {
-        this.city = new City(startBudget);
+        this.city      = new City(startBudget);
         this.generator = new EventGenerator();
-        this.router = new EventRouter();
+        this.router    = new EventRouter();
         this.president = new President(city);
 
         // Register all ministries — SP3
-        registerMinistry(new InteriorMinistry());
-        registerMinistry(new DefenseMinistry());
-        registerMinistry(new FinanceMinistry());
-        registerMinistry(new HealthMinistry());
-        registerMinistry(new PopulationMinistry());
+        registerMinistry(new InteriorMinistry(),   new Minister("Ahmed",    "Interior"));
+        registerMinistry(new DefenseMinistry(),    new Minister("Hassan",   "Defense"));
+        registerMinistry(new FinanceMinistry(),    new Minister("Indrek",   "Finance"));
+        registerMinistry(new HealthMinistry(),     new Minister("Armin",    "Health"));
+        registerMinistry(new PopulationMinistry(), new Minister("Abdullah", "Population"));
     }
 
-    /** Register ministry to both list and router */
-    private void registerMinistry(Ministry ministry) {
+    /** Register ministry and minister */
+    private void registerMinistry(Ministry ministry, Minister minister) {
         ministries.add(ministry);
+        ministers.add(minister);
         router.addMinistry(ministry.getName(), ministry);
     }
 
@@ -73,31 +75,99 @@ public class SimuEngine {
 
         // Collect reports from all ministries — SP5
         List<Report> reports = new ArrayList<>();
-        for (Ministry m : ministries) {
-            reports.add(m.generateReport(city.getMonth(), city.getYear()));
+        for (int i = 0; i < ministries.size(); i++) {
+            Report r = ministries.get(i).generateReport(city.getMonth(), city.getYear());
+            reports.add(r);
+            ministers.get(i).addMonthlyReport(r);
+            ministries.get(i).clearEventLog();
         }
 
         // Print monthly report — SP5
         reportGen.printMonthlyReport(city, reports);
 
         // President reviews monthly reports — AI budget suggestions
-        president.applyMonthlyDecisions(reports);
+        president.applyMonthlyDecisions(reports, scanner);
 
         city.nextMonth();
 
+        // Annual review — every 12 months
+        if (city.getMonth() == 1) {
+            runAnnualReview();
+        }
+
         // Check game over
         checkGameOver();
+    }
+
+    /** Annual minister review — shown after year ends */
+    private void runAnnualReview() {
+        System.out.println("\n========================================");
+        System.out.println("ANNUAL MINISTER REVIEW — Year " + city.getYear());
+        System.out.println("========================================");
+
+        for (Minister minister : ministers) {
+            System.out.println("\n========================================");
+            System.out.println("Minister: " + minister.getName() +
+                    " | Ministry: " + minister.getMinistry());
+            System.out.println("----------------------------------------");
+
+            double totalRating = 0;
+            for (Report r : minister.getMonthlyReports()) {
+                System.out.printf("Month %-2d | Events: %-3d | Resolved: %-3d | Rating: %.0f%%%n",
+                        r.getMonth(), r.getTotalEvents(),
+                        r.getResolved(), r.getRating());
+                totalRating += r.getRating();
+            }
+
+            double avgRating = minister.getMonthlyReports().isEmpty()
+                    ? 0 : totalRating / minister.getMonthlyReports().size();
+
+            System.out.println("----------------------------------------");
+            System.out.printf("Average Rating: %.0f%%%n", avgRating);
+            System.out.println("========================================");
+
+            // Get AI suggestion
+            DecisionOption option = president.getAnnualOption(minister, avgRating);
+
+            System.out.println("AI Advisor suggests:");
+            System.out.println("  1. KEEP - " + (option.title.equalsIgnoreCase("KEEP")
+                    ? option.description : "Solid performance overall"));
+            System.out.println("  2. FIRE - " + (option.title.equalsIgnoreCase("FIRE")
+                    ? option.description : "Poor performance detected"));
+            System.out.println("========================================");
+
+            // Player chooses
+            int choice = -1;
+            while (choice != 0 && choice != 1) {
+                System.out.print("Choose option (1 or 2): ");
+                try {
+                    choice = scanner.nextInt() - 1;
+                    if (choice != 0 && choice != 1)
+                        System.out.println("Invalid! Enter 1 or 2.");
+                } catch (Exception e) {
+                    System.out.println("Invalid! Enter 1 or 2.");
+                    scanner.nextLine();
+                }
+            }
+
+            if (choice == 0) {
+                minister.setStatus("ACTIVE");
+                System.out.println("  -> KEPT");
+            } else {
+                minister.setStatus("FIRED");
+                System.out.println("  -> FIRED");
+            }
+        }
     }
 
     /** Handle dangerous event — show options and get player choice */
     private void handleDangerousEvent(Event event, int day) {
         DecisionOption[] options = president.getEventOptions(event);
 
-        // Display event info and AI suggestions
         System.out.println("\n========================================");
         System.out.println("DANGEROUS EVENT — " + event.getMinistry() + " Ministry");
         System.out.println("Event: " + event.getDescription());
-        System.out.printf("Budget: EUR %.0f | Satisfaction: %.0f%%%n",
+        System.out.printf( "Budget: EUR %.0f | Satisfaction: %.0f%%%n",
                 city.getBudget(), city.getSatisfaction());
         System.out.println("========================================");
         System.out.println("AI Advisor suggests:");
@@ -110,7 +180,6 @@ public class SimuEngine {
         }
         System.out.println("========================================");
 
-        // Wait for player input
         int choice = -1;
         while (choice < 0 || choice > 2) {
             System.out.print("Choose option (1, 2, or 3): ");
@@ -124,7 +193,6 @@ public class SimuEngine {
             }
         }
 
-        // Apply decision
         Decision decision = president.applyEventDecision(
                 event, options[choice], choice, day, router);
 
@@ -144,15 +212,7 @@ public class SimuEngine {
             System.out.println("YOU WIN — Survived 3 years!");
     }
 
-    public City getCity() {
-        return city;
-    }
-
-    public President getPresident() {
-        return president;
-    }
-
-    public List<Ministry> getMinistries() {
-        return ministries;
-    }
+    public City           getCity()       { return city; }
+    public President      getPresident()  { return president; }
+    public List<Ministry> getMinistries() { return ministries; }
 }

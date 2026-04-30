@@ -15,18 +15,22 @@ import java.util.List;
 
 /**
  * AI Advisor — connects to Groq API and returns DecisionOption arrays:
- * 1. Dangerous event — 3 DecisionOptions with cost
- * 2. Monthly report — DecisionOptions per ministry (ADD/CUT/KEEP)
- * 3. Annual review — 1 DecisionOption (KEEP/FIRE)
+ * 1. Dangerous event  — 3 DecisionOptions with cost
+ * 2. Monthly report   — DecisionOptions per ministry (ADD/CUT/KEEP)
+ * 3. Annual review    — 1 DecisionOption (KEEP/FIRE)
  */
 public class AIAdvisor {
 
-    // Load API key and model from .env
-    private static final Dotenv dotenv = Dotenv.load();
-    private static final String API_KEY = dotenv.get("GROQ_API_KEY");
-    private static final String MODEL = dotenv.get("GROQ_MODEL");
-    private static final String API_URL = "https://api.groq.com/openai/v1/chat/completions";
+    // Load API keys and model from .env
+    private static final Dotenv   dotenv  = Dotenv.load();
+    private static final String[] API_KEYS = {
+            dotenv.get("GROQ_API_KEY_1"),
+            dotenv.get("GROQ_API_KEY_2")
+    };
+    private static final String   MODEL   = dotenv.get("GROQ_MODEL");
+    private static final String   API_URL = "https://api.groq.com/openai/v1/chat/completions";
 
+    private int currentKeyIndex = 0;
     private final HttpClient client = HttpClient.newHttpClient();
 
     // ─────────────────────────────────────────────────────
@@ -46,8 +50,13 @@ public class AIAdvisor {
                         "TITLE: [title] | DESC: [description] | COST: [number]\n" +
                         "TITLE: [title] | DESC: [description] | COST: [number]\n" +
                         "Line 1 = cheapest (0). Line 3 = most expensive.",
-                event.getMinistry(), event.getDescription(),
-                city.getBudget(), city.getSatisfaction());
+                event.getMinistry(),
+                event.getDescription()
+                        .replace("—", "-")
+                        .replace("€", "EUR")
+                        .replace("\\", "/"),
+                city.getBudget(), city.getSatisfaction()
+        );
 
         String raw = callGroq(prompt);
         return parseOptions(raw, DecisionType.DANGEROUS_EVENT, 3);
@@ -60,13 +69,13 @@ public class AIAdvisor {
     // ─────────────────────────────────────────────────────
 
     public DecisionOption[] suggestForMonthlyReport(List<Report> reports, City city) {
-        // Build ministry summary to send to Groq
         StringBuilder summary = new StringBuilder();
         for (Report r : reports) {
             summary.append(String.format(
                     "%s: rating=%.0f%% resolved=%d ignored=%d. ",
                     r.getMinistry(), r.getRating(),
-                    r.getResolved(), r.getUnresolved()));
+                    r.getResolved(), r.getUnresolved()
+            ));
         }
 
         String prompt = String.format(
@@ -78,14 +87,39 @@ public class AIAdvisor {
                         "TITLE: [ADD/CUT/KEEP] | DESC: [ministry - short reason] | COST: [number]\n" +
                         "COST = amount to add or cut. 0 if KEEP.",
                 summary.toString(), city.getBudget(),
-                city.getSatisfaction(), reports.size());
+                city.getSatisfaction(), reports.size()
+        );
 
         String raw = callGroq(prompt);
         return parseOptions(raw, DecisionType.MONTHLY_BUDGET, reports.size());
     }
 
     // ─────────────────────────────────────────────────────
-    // CASE 3 — Annual Review
+    // CASE 3 — Ministry Monthly Review
+    // Sends one ministry report + city state to Groq
+    // Returns exactly ADD, KEEP, CUT options
+    // ─────────────────────────────────────────────────────
+
+    public DecisionOption[] suggestForMinistryReview(Report report, City city) {
+        String prompt = String.format(
+                "You are an AI advisor in a city simulation game. " +
+                        "Ministry: %s. Rating: %.0f%%. Resolved: %d. Ignored: %d. " +
+                        "City budget: %.0f euros. Satisfaction: %.0f%%. " +
+                        "Respond with EXACTLY 3 lines, no extra text, no numbering:\n" +
+                        "TITLE: ADD | DESC: [reason to invest more] | COST: [number above 0]\n" +
+                        "TITLE: KEEP | DESC: [reason to keep same] | COST: 0\n" +
+                        "TITLE: CUT | DESC: [reason to cut] | COST: [number above 0]",
+                report.getMinistry(), report.getRating(),
+                report.getResolved(), report.getUnresolved(),
+                city.getBudget(), city.getSatisfaction()
+        );
+
+        String raw = callGroq(prompt);
+        return parseOptions(raw, DecisionType.MONTHLY_BUDGET, 3);
+    }
+
+    // ─────────────────────────────────────────────────────
+    // CASE 4 — Annual Review
     // Sends minister performance to Groq
     // Returns KEEP or FIRE with reason
     // ─────────────────────────────────────────────────────
@@ -99,54 +133,81 @@ public class AIAdvisor {
                         "Format EXACTLY as (one line, no extra text):\n" +
                         "TITLE: [KEEP/FIRE] | DESC: [one sentence reason] | COST: 0",
                 minister.getName(), minister.getMinistry(),
-                avgRating, minister.getWarnings());
+                avgRating, minister.getWarnings()
+        );
 
         String raw = callGroq(prompt);
-        DecisionOption[] result = parseOptions(raw, DecisionType.ANNUAL_REVIEW, 1);
-        return result[0];
+        return parseOptions(raw, DecisionType.ANNUAL_REVIEW, 1)[0];
     }
 
     // ─────────────────────────────────────────────────────
     // Groq API — sends prompt and returns raw text
+    // Rotates between API keys on rate limit
     // ─────────────────────────────────────────────────────
 
     private String callGroq(String prompt) {
-        try {
-            String body = String.format("""
+        String cleanPrompt = prompt
+                .replace("\"", "'")
+                .replace("\n", "\\n")
+                .replace("\r", "")
+                .replace("\\", "/")
+                .replace("—", "-")
+                .replace("€", "EUR");
+
+        int attempts = 0;
+
+        while (attempts < API_KEYS.length) {
+            String apiKey = API_KEYS[currentKeyIndex];
+            try {
+                String body = String.format("""
+                {
+                  "model": "%s",
+                  "messages": [
                     {
-                      "model": "%s",
-                      "messages": [
-                        {
-                          "role": "user",
-                          "content": "%s"
-                        }
-                      ],
-                      "temperature": 0.7,
-                      "max_tokens": 500
+                      "role": "user",
+                      "content": "%s"
                     }
-                    """, MODEL, prompt.replace("\"", "'").replace("\n", "\\n"));
+                  ],
+                  "temperature": 0.7,
+                  "max_tokens": 300
+                }
+                """, MODEL, cleanPrompt);
 
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(API_URL))
-                    .header("Content-Type", "application/json")
-                    .header("Authorization", "Bearer " + API_KEY)
-                    .POST(HttpRequest.BodyPublishers.ofString(body))
-                    .build();
+                HttpRequest request = HttpRequest.newBuilder()
+                        .uri(URI.create(API_URL))
+                        .header("Content-Type", "application/json")
+                        .header("Authorization", "Bearer " + apiKey)
+                        .POST(HttpRequest.BodyPublishers.ofString(body))
+                        .build();
 
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+                HttpResponse<String> response =
+                        client.send(request, HttpResponse.BodyHandlers.ofString());
 
-            return parseRawText(response.body());
+                if (response.statusCode() == 200) {
+                    return parseRawText(response.body());
+                }
 
-        } catch (Exception e) {
-            System.out.println("[AIAdvisor] Groq error: " + e.getMessage());
-            return "";
+                // Rate limit or error — switch key
+                System.out.println("[AIAdvisor] Key #" + (currentKeyIndex + 1) +
+                        " failed (" + response.statusCode() + ") — switching...");
+                currentKeyIndex = (currentKeyIndex + 1) % API_KEYS.length;
+
+            } catch (Exception e) {
+                System.out.println("[AIAdvisor] Key #" + (currentKeyIndex + 1) +
+                        " error: " + e.getMessage());
+                currentKeyIndex = (currentKeyIndex + 1) % API_KEYS.length;
+            }
+
+            attempts++;
         }
+
+        System.out.println("[AIAdvisor] All API keys failed.");
+        return "";
     }
 
     // Extract raw text from Groq JSON response
     private String parseRawText(String json) {
         try {
-            // Find content field
             int start = json.indexOf("\"content\":\"") + 11;
             if (start == 10) {
                 start = json.indexOf("\"content\": \"") + 12;
@@ -170,40 +231,66 @@ public class AIAdvisor {
         int idx = 0;
 
         for (String line : lines) {
-            if (line.isBlank() || idx >= count)
-                continue;
+            if (line.isBlank() || idx >= count) continue;
             try {
                 String title, desc;
                 int cost;
 
                 if (line.contains("TITLE:")) {
-                    // Format: TITLE: x | DESC: y | COST: z
                     title = extract(line, "TITLE:", "|").trim();
-                    desc = extract(line, "DESC:", "|").trim();
+                    desc  = extract(line, "DESC:",  "|").trim();
                 } else if (line.contains("|")) {
-                    // Format: x | DESC: y | COST: z (no TITLE prefix)
                     title = line.substring(0, line.indexOf("|")).trim();
-                    desc = extract(line, "DESC:", "|").trim();
+                    desc  = extract(line, "DESC:", "|").trim();
                 } else {
                     title = "OPTION " + (idx + 1);
-                    desc = line.trim();
+                    desc  = line.trim();
                 }
 
                 cost = Integer.parseInt(
                         extract(line, "COST:", "\n")
-                                .replaceAll("[^0-9]", "").trim());
+                                .replaceAll("[^0-9]", "").trim()
+                );
 
                 options[idx++] = new DecisionOption(type, title, desc, cost);
 
             } catch (Exception e) {
-                options[idx++] = new DecisionOption(
-                        type, "OPTION " + (idx + 1), "No suggestion", 0);
+                if (type == DecisionType.MONTHLY_BUDGET) {
+                    options[idx] = new DecisionOption(
+                            type,
+                            idx == 0 ? "ADD"  : idx == 1 ? "KEEP" : "CUT",
+                            idx == 0 ? "Invest more in ministry" : idx == 1 ? "No change needed" : "Reduce spending",
+                            0
+                    );
+                } else {
+                    options[idx] = new DecisionOption(
+                            type,
+                            idx == 0 ? "IGNORE"     : idx == 1 ? "INVESTIGATE" : "EMERGENCY",
+                            idx == 0 ? "Do nothing" : idx == 1 ? "Send a team" : "Full response",
+                            0
+                    );
+                }
+                idx++;
             }
         }
+
         // Fallback if Groq returned less than expected
         while (idx < count) {
-            options[idx] = new DecisionOption(
-                    type, "OPTION " + (idx + 1), "No suggestion", 0);
+            if (type == DecisionType.MONTHLY_BUDGET) {
+                options[idx] = new DecisionOption(
+                        type,
+                        idx == 0 ? "ADD"  : idx == 1 ? "KEEP" : "CUT",
+                        idx == 0 ? "Invest more in ministry" : idx == 1 ? "No change needed" : "Reduce spending",
+                        0
+                );
+            } else {
+                options[idx] = new DecisionOption(
+                        type,
+                        idx == 0 ? "IGNORE"     : idx == 1 ? "INVESTIGATE" : "EMERGENCY",
+                        idx == 0 ? "Do nothing" : idx == 1 ? "Send a team" : "Full response",
+                        0
+                );
+            }
             idx++;
         }
 
@@ -213,9 +300,8 @@ public class AIAdvisor {
     // Extracts text between two markers in a line
     private String extract(String line, String from, String to) {
         int start = line.indexOf(from) + from.length();
-        int end = line.indexOf(to, start);
-        if (end == -1)
-            end = line.length();
+        int end   = line.indexOf(to, start);
+        if (end == -1) end = line.length();
         return line.substring(start, end);
     }
 }

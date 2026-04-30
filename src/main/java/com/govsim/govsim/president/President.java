@@ -6,6 +6,7 @@ import com.govsim.govsim.simulation.EventRouter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Scanner;
 
 /**
  * President — makes all major decisions using AI suggestions:
@@ -87,40 +88,59 @@ public class President {
         return advisor.suggestForMonthlyReport(reports, city);
     }
 
-    public void applyMonthlyDecisions(List<Report> reports) {
+    public void applyMonthlyDecisions(List<Report> reports, Scanner scanner) {
         System.out.println("[President] Monthly Report Review:");
 
-        // Print ministry performance
         for (Report r : reports) {
-            System.out.println("  " + r.getMinistry() +
-                    " | Rating: "   + r.getRating()    + "%" +
-                    " | Resolved: " + r.getResolved()  +
+            System.out.println("\n========================================");
+            System.out.println("MONTHLY REVIEW — " + r.getMinistry() + " Ministry");
+            System.out.println("Rating: " + r.getRating() + "%" +
+                    " | Resolved: " + r.getResolved() +
                     " | Ignored: "  + r.getUnresolved());
-        }
+            System.out.println("========================================");
 
-        // Get and apply AI budget suggestions
-        DecisionOption[] suggestions = getMonthlyOptions(reports);
-        System.out.println("[President] AI budget suggestions:");
+            // Get 3 AI options for this ministry
+            DecisionOption[] options = advisor.suggestForMinistryReview(r, city);
 
-        for (DecisionOption option : suggestions) {
-            if (option == null) continue;
-            System.out.println("  -> " + option);
+            System.out.println("AI Advisor suggests:");
+            for (int i = 0; i < options.length; i++) {
+                System.out.printf("  %d. %-12s - %-40s - Cost: EUR %d%n",
+                        i + 1,
+                        options[i].title,
+                        options[i].description,
+                        options[i].cost);
+            }
+            System.out.println("========================================");
 
-            // Apply ADD or CUT to city budget
-            switch (option.title.toUpperCase()) {
+            // Player chooses
+            int choice = -1;
+            while (choice < 0 || choice > 2) {
+                System.out.print("Choose option (1, 2, or 3): ");
+                try {
+                    choice = scanner.nextInt() - 1;
+                    if (choice < 0 || choice > 2)
+                        System.out.println("Invalid! Enter 1, 2, or 3.");
+                } catch (Exception e) {
+                    System.out.println("Invalid! Enter 1, 2, or 3.");
+                    scanner.nextLine();
+                }
+            }
+
+            // Apply chosen option
+            DecisionOption chosen = options[choice];
+            switch (chosen.title.toUpperCase()) {
                 case "ADD" -> {
-                    city.setBudget(city.getBudget() - option.cost);
-                    System.out.println("     Invested: -€" + option.cost);
+                    city.setBudget(city.getBudget() - chosen.cost);
+                    System.out.println("  -> Invested: -EUR " + chosen.cost);
                 }
                 case "CUT" -> {
-                    city.setBudget(city.getBudget() + option.cost);
-                    System.out.println("     Saved: +€" + option.cost);
+                    city.setBudget(city.getBudget() + chosen.cost);
+                    System.out.println("  -> Saved: +EUR " + chosen.cost);
                 }
-                case "KEEP" -> System.out.println("     No change.");
+                case "KEEP" -> System.out.println("  -> No change.");
             }
         }
     }
-
     // ─────────────────────────────────────────────────────
     // 3. ANNUAL REVIEW
     // AI returns KEEP or FIRE per minister
@@ -153,6 +173,9 @@ public class President {
                 }
             }
         }
+    }
+    public DecisionOption getAnnualOption(Minister minister, double avgRating) {
+        return advisor.suggestForAnnualReview(minister, avgRating);
     }
 
     public List<Decision> getDecisionHistory() { return decisionHistory; }

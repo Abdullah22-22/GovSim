@@ -13,15 +13,15 @@ public class EventGenerator {
     private static final Map<String, Integer> MINISTRY_CHANCE = new LinkedHashMap<>();
 
     static {
-        MINISTRY_CHANCE.put("Interior", 40);
-        MINISTRY_CHANCE.put("Defense", 30);
-        MINISTRY_CHANCE.put("Finance", 35);
-        MINISTRY_CHANCE.put("Population", 40);
-        MINISTRY_CHANCE.put("Health", 35);
+        MINISTRY_CHANCE.put("Interior",   30);
+        MINISTRY_CHANCE.put("Defense",    20);
+        MINISTRY_CHANCE.put("Finance",    25);
+        MINISTRY_CHANCE.put("Population", 30);
+        MINISTRY_CHANCE.put("Health",     25);
     }
 
     // Dangerous event chance %
-    private int dangerChance = 15;
+    private int dangerChance = 8;
 
     /** Generates events for all ministries on a given day */
     public List<Event> generateDailyEvents(int day) {

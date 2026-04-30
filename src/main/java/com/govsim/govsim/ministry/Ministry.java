@@ -35,6 +35,11 @@ public abstract class Ministry {
     /** Generate monthly report */
     public abstract Report generateReport(int month, int year);
 
+    /** Clear event log — start fresh each month */
+    public void clearEventLog() {
+        eventLog.clear();
+    }
+
     public String getName() {
         return name;
     }
