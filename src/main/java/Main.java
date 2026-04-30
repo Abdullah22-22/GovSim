@@ -5,11 +5,8 @@ public class Main {
 
         SimuEngine engine = new SimuEngine(1000000);
 
-        // Run 2 months to test monthly income
-        engine.runMonth();
+        // Run  months to test monthly income
         engine.runMonth();
 
-
-        System.out.println(engine.getCity());
     }
 }

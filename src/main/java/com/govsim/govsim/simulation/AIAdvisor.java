@@ -15,18 +15,17 @@ import java.util.List;
 
 /**
  * AI Advisor — connects to Groq API and returns DecisionOption arrays:
- * 1. Dangerous event  — 3 DecisionOptions with cost
- * 2. Monthly report   — DecisionOptions per ministry (ADD/CUT/KEEP)
- * 3. Annual review    — 1 DecisionOption (KEEP/FIRE)
+ * 1. Dangerous event — 3 DecisionOptions with cost
+ * 2. Monthly report — DecisionOptions per ministry (ADD/CUT/KEEP)
+ * 3. Annual review — 1 DecisionOption (KEEP/FIRE)
  */
 public class AIAdvisor {
 
     // Load API key and model from .env
-    private static final Dotenv  dotenv  = Dotenv.load();
-    private static final String  API_KEY = dotenv.get("GROQ_API_KEY");
-    private static final String  MODEL   = dotenv.get("GROQ_MODEL");
-    private static final String  API_URL = "https://api.groq.com/openai/v1/chat/completions";
-
+    private static final Dotenv dotenv = Dotenv.load();
+    private static final String API_KEY = dotenv.get("GROQ_API_KEY");
+    private static final String MODEL = dotenv.get("GROQ_MODEL");
+    private static final String API_URL = "https://api.groq.com/openai/v1/chat/completions";
 
     private final HttpClient client = HttpClient.newHttpClient();
 
@@ -38,18 +37,17 @@ public class AIAdvisor {
 
     public DecisionOption[] suggestForEvent(Event event, City city) {
         String prompt = String.format(
-            "You are an AI advisor in a city simulation game. " +
-            "A DANGEROUS event occurred in the %s ministry: '%s'. " +
-            "City state: Budget=%.0f euros, Satisfaction=%.0f%%. " +
-            "Suggest exactly 3 options. Adjust costs based on budget. " +
-            "Format EXACTLY as (3 lines, no extra text):\n" +
-            "TITLE: [title] | DESC: [description] | COST: [number]\n" +
-            "TITLE: [title] | DESC: [description] | COST: [number]\n" +
-            "TITLE: [title] | DESC: [description] | COST: [number]\n" +
-            "Line 1 = cheapest (0). Line 3 = most expensive.",
-            event.getMinistry(), event.getDescription(),
-            city.getBudget(), city.getSatisfaction()
-        );
+                "You are an AI advisor in a city simulation game. " +
+                        "A DANGEROUS event occurred in the %s ministry: '%s'. " +
+                        "City state: Budget=%.0f euros, Satisfaction=%.0f%%. " +
+                        "Suggest exactly 3 options. Adjust costs based on budget. " +
+                        "Format EXACTLY as (3 lines, no extra text):\n" +
+                        "TITLE: [title] | DESC: [description] | COST: [number]\n" +
+                        "TITLE: [title] | DESC: [description] | COST: [number]\n" +
+                        "TITLE: [title] | DESC: [description] | COST: [number]\n" +
+                        "Line 1 = cheapest (0). Line 3 = most expensive.",
+                event.getMinistry(), event.getDescription(),
+                city.getBudget(), city.getSatisfaction());
 
         String raw = callGroq(prompt);
         return parseOptions(raw, DecisionType.DANGEROUS_EVENT, 3);
@@ -66,23 +64,21 @@ public class AIAdvisor {
         StringBuilder summary = new StringBuilder();
         for (Report r : reports) {
             summary.append(String.format(
-                "%s: rating=%.0f%% resolved=%d ignored=%d. ",
-                r.getMinistry(), r.getRating(),
-                r.getResolved(), r.getUnresolved()
-            ));
+                    "%s: rating=%.0f%% resolved=%d ignored=%d. ",
+                    r.getMinistry(), r.getRating(),
+                    r.getResolved(), r.getUnresolved()));
         }
 
         String prompt = String.format(
-            "You are an AI advisor in a city simulation game. " +
-            "Monthly ministry performance: %s " +
-            "City budget: %.0f euros. Satisfaction: %.0f%%. " +
-            "Suggest exactly %d budget actions (one per ministry). " +
-            "Format EXACTLY as (one line per ministry, no extra text):\n" +
-            "TITLE: [ADD/CUT/KEEP] | DESC: [ministry - short reason] | COST: [number]\n" +
-            "COST = amount to add or cut. 0 if KEEP.",
-            summary.toString(), city.getBudget(),
-            city.getSatisfaction(), reports.size()
-        );
+                "You are an AI advisor in a city simulation game. " +
+                        "Monthly ministry performance: %s " +
+                        "City budget: %.0f euros. Satisfaction: %.0f%%. " +
+                        "Suggest exactly %d budget actions (one per ministry). " +
+                        "Format EXACTLY as (one line per ministry, no extra text):\n" +
+                        "TITLE: [ADD/CUT/KEEP] | DESC: [ministry - short reason] | COST: [number]\n" +
+                        "COST = amount to add or cut. 0 if KEEP.",
+                summary.toString(), city.getBudget(),
+                city.getSatisfaction(), reports.size());
 
         String raw = callGroq(prompt);
         return parseOptions(raw, DecisionType.MONTHLY_BUDGET, reports.size());
@@ -96,15 +92,14 @@ public class AIAdvisor {
 
     public DecisionOption suggestForAnnualReview(Minister minister, double avgRating) {
         String prompt = String.format(
-            "You are an AI advisor in a city simulation game. " +
-            "Minister '%s' manages the %s ministry. " +
-            "Average performance this year: %.0f%%. Warnings: %d. " +
-            "Should the president KEEP or FIRE this minister? " +
-            "Format EXACTLY as (one line, no extra text):\n" +
-            "TITLE: [KEEP/FIRE] | DESC: [one sentence reason] | COST: 0",
-            minister.getName(), minister.getMinistry(),
-            avgRating, minister.getWarnings()
-        );
+                "You are an AI advisor in a city simulation game. " +
+                        "Minister '%s' manages the %s ministry. " +
+                        "Average performance this year: %.0f%%. Warnings: %d. " +
+                        "Should the president KEEP or FIRE this minister? " +
+                        "Format EXACTLY as (one line, no extra text):\n" +
+                        "TITLE: [KEEP/FIRE] | DESC: [one sentence reason] | COST: 0",
+                minister.getName(), minister.getMinistry(),
+                avgRating, minister.getWarnings());
 
         String raw = callGroq(prompt);
         DecisionOption[] result = parseOptions(raw, DecisionType.ANNUAL_REVIEW, 1);
@@ -118,18 +113,18 @@ public class AIAdvisor {
     private String callGroq(String prompt) {
         try {
             String body = String.format("""
-            {
-              "model": "%s",
-              "messages": [
-                {
-                  "role": "user",
-                  "content": "%s"
-                }
-              ],
-              "temperature": 0.7,
-              "max_tokens": 500
-            }
-            """, MODEL, prompt.replace("\"", "'").replace("\n", "\\n"));
+                    {
+                      "model": "%s",
+                      "messages": [
+                        {
+                          "role": "user",
+                          "content": "%s"
+                        }
+                      ],
+                      "temperature": 0.7,
+                      "max_tokens": 500
+                    }
+                    """, MODEL, prompt.replace("\"", "'").replace("\n", "\\n"));
 
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(API_URL))
@@ -138,8 +133,7 @@ public class AIAdvisor {
                     .POST(HttpRequest.BodyPublishers.ofString(body))
                     .build();
 
-            HttpResponse<String> response =
-                    client.send(request, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
             return parseRawText(response.body());
 
@@ -148,6 +142,7 @@ public class AIAdvisor {
             return "";
         }
     }
+
     // Extract raw text from Groq JSON response
     private String parseRawText(String json) {
         try {
@@ -166,6 +161,7 @@ public class AIAdvisor {
             return "";
         }
     }
+
     // Parse Groq response into DecisionOption array
     // Expected format per line: "TITLE: x | DESC: y | COST: 1234"
     private DecisionOption[] parseOptions(String raw, DecisionType type, int count) {
@@ -174,7 +170,8 @@ public class AIAdvisor {
         int idx = 0;
 
         for (String line : lines) {
-            if (line.isBlank() || idx >= count) continue;
+            if (line.isBlank() || idx >= count)
+                continue;
             try {
                 String title, desc;
                 int cost;
@@ -182,34 +179,31 @@ public class AIAdvisor {
                 if (line.contains("TITLE:")) {
                     // Format: TITLE: x | DESC: y | COST: z
                     title = extract(line, "TITLE:", "|").trim();
-                    desc  = extract(line, "DESC:",  "|").trim();
+                    desc = extract(line, "DESC:", "|").trim();
                 } else if (line.contains("|")) {
                     // Format: x | DESC: y | COST: z (no TITLE prefix)
                     title = line.substring(0, line.indexOf("|")).trim();
-                    desc  = extract(line, "DESC:", "|").trim();
+                    desc = extract(line, "DESC:", "|").trim();
                 } else {
                     title = "OPTION " + (idx + 1);
-                    desc  = line.trim();
+                    desc = line.trim();
                 }
 
                 cost = Integer.parseInt(
                         extract(line, "COST:", "\n")
-                                .replaceAll("[^0-9]", "").trim()
-                );
+                                .replaceAll("[^0-9]", "").trim());
 
                 options[idx++] = new DecisionOption(type, title, desc, cost);
 
             } catch (Exception e) {
                 options[idx++] = new DecisionOption(
-                        type, "OPTION " + (idx + 1), "No suggestion", 0
-                );
+                        type, "OPTION " + (idx + 1), "No suggestion", 0);
             }
         }
         // Fallback if Groq returned less than expected
         while (idx < count) {
             options[idx] = new DecisionOption(
-                type, "OPTION " + (idx + 1), "No suggestion", 0
-            );
+                    type, "OPTION " + (idx + 1), "No suggestion", 0);
             idx++;
         }
 
@@ -219,8 +213,9 @@ public class AIAdvisor {
     // Extracts text between two markers in a line
     private String extract(String line, String from, String to) {
         int start = line.indexOf(from) + from.length();
-        int end   = line.indexOf(to, start);
-        if (end == -1) end = line.length();
+        int end = line.indexOf(to, start);
+        if (end == -1)
+            end = line.length();
         return line.substring(start, end);
     }
 }

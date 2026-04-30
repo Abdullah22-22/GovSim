@@ -23,7 +23,6 @@ public class EventGenerator {
     // Dangerous event chance %
     private int dangerChance = 15;
 
-
     /** Generates events for all ministries on a given day */
     public List<Event> generateDailyEvents(int day) {
         List<Event> dailyEvents = new ArrayList<>();

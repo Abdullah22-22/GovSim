@@ -3,18 +3,19 @@ package com.govsim.govsim.simulation;
 import com.govsim.govsim.ministry.*;
 import com.govsim.govsim.model.*;
 import com.govsim.govsim.president.*;
-
-import java.util.Scanner;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Scanner;
 
 /** Main simulation engine — runs the full day loop */
 public class SimuEngine {
+
     private final Scanner scanner = new Scanner(System.in);
     private City city;
     private EventGenerator generator;
     private EventRouter router;
     private President president;
+    private ReportGenerator reportGen = new ReportGenerator();
     private List<Ministry> ministries = new ArrayList<>();
 
     /** Setup simulation */
@@ -29,7 +30,7 @@ public class SimuEngine {
         registerMinistry(new DefenseMinistry());
         registerMinistry(new FinanceMinistry());
         registerMinistry(new HealthMinistry());
-        // registerMinistry(new PopulationMinistry());
+        registerMinistry(new PopulationMinistry());
     }
 
     /** Register ministry to both list and router */
@@ -44,6 +45,15 @@ public class SimuEngine {
 
         // Day loop
         for (int day = 1; day <= 30; day++) {
+
+            // Process delayed consequences — get new dangerous events
+            List<Event> consequenceEvents = president.processDailyConsequences(day);
+            for (Event ce : consequenceEvents) {
+                handleDangerousEvent(ce, day);
+                router.route(ce);
+            }
+
+            // Generate daily events
             List<Event> events = generator.generateDailyEvents(day);
 
             for (Event event : events) {
@@ -51,71 +61,87 @@ public class SimuEngine {
 
                 // Dangerous event — AI suggests 3 options, player chooses
                 if (event.getSeverity() == Severity.DANGEROUS) {
-                    DecisionOption[] options = president.getEventOptions(event);
-
-                    // Display event info and AI suggestions
-                    System.out.println("\n========================================");
-                    System.out.println("DANGEROUS EVENT — " + event.getMinistry() + " Ministry");
-                    System.out.println("Event: " + event.getDescription());
-                    System.out.printf("Budget: EUR %.0f | Satisfaction: %.0f%%%n",
-                            city.getBudget(), city.getSatisfaction());
-                    System.out.println("========================================");
-                    System.out.println("AI Advisor suggests:");
-                    for (int i = 0; i < options.length; i++) {
-                        System.out.printf("  %d. %-20s - %-45s - Cost: EUR %d%n",
-                                i + 1,
-                                options[i].title,
-                                options[i].description,
-                                options[i].cost);
-                    }
-                    System.out.println("========================================");
-
-                    // Wait for player input
-                    int choice = -1;
-                    while (choice < 0 || choice > 2) {
-                        System.out.print("Choose option (1, 2, or 3): ");
-                        try {
-                            choice = scanner.nextInt() - 1;
-                            if (choice < 0 || choice > 2)
-                                System.out.println("Invalid! Enter 1, 2, or 3.");
-                        } catch (Exception e) {
-                            System.out.println("Invalid! Enter 1, 2, or 3.");
-                            scanner.nextLine();
-                        }
-                    }
-
-                    Decision decision = president.applyEventDecision(event, options[choice], choice);
-                    System.out.println("Decision: " + decision.getChoice() +
-                            " | Cost: EUR " + (int) decision.getCost() +
-                            " | Budget left: EUR " + (int) city.getBudget());
-                    System.out.println();
+                    handleDangerousEvent(event, day);
                 }
 
                 router.route(event);
             }
         }
 
-        // End of month
+        // End of month finances
         city.applyMonthlyFinance();
-        System.out.println("\n--- End of Month ---");
-        System.out.println(city);
+
+        // Collect reports from all ministries — SP5
+        List<Report> reports = new ArrayList<>();
+        for (Ministry m : ministries) {
+            reports.add(m.generateReport(city.getMonth(), city.getYear()));
+        }
+
+        // Print monthly report — SP5
+        reportGen.printMonthlyReport(city, reports);
+
+        // President reviews monthly reports — AI budget suggestions
+        president.applyMonthlyDecisions(reports);
+
         city.nextMonth();
 
         // Check game over
         checkGameOver();
     }
 
+    /** Handle dangerous event — show options and get player choice */
+    private void handleDangerousEvent(Event event, int day) {
+        DecisionOption[] options = president.getEventOptions(event);
+
+        // Display event info and AI suggestions
+        System.out.println("\n========================================");
+        System.out.println("DANGEROUS EVENT — " + event.getMinistry() + " Ministry");
+        System.out.println("Event: " + event.getDescription());
+        System.out.printf("Budget: EUR %.0f | Satisfaction: %.0f%%%n",
+                city.getBudget(), city.getSatisfaction());
+        System.out.println("========================================");
+        System.out.println("AI Advisor suggests:");
+        for (int i = 0; i < options.length; i++) {
+            System.out.printf("  %d. %-20s - %-45s - Cost: EUR %d%n",
+                    i + 1,
+                    options[i].title,
+                    options[i].description,
+                    options[i].cost);
+        }
+        System.out.println("========================================");
+
+        // Wait for player input
+        int choice = -1;
+        while (choice < 0 || choice > 2) {
+            System.out.print("Choose option (1, 2, or 3): ");
+            try {
+                choice = scanner.nextInt() - 1;
+                if (choice < 0 || choice > 2)
+                    System.out.println("Invalid! Enter 1, 2, or 3.");
+            } catch (Exception e) {
+                System.out.println("Invalid! Enter 1, 2, or 3.");
+                scanner.nextLine();
+            }
+        }
+
+        // Apply decision
+        Decision decision = president.applyEventDecision(
+                event, options[choice], choice, day, router);
+
+        System.out.println("Decision: " + decision.getChoice() +
+                " | Cost: EUR " + (int) decision.getCost() +
+                " | Budget left: EUR " + (int) city.getBudget());
+        System.out.println();
+    }
+
     /** Check win / lose conditions */
     private void checkGameOver() {
-        if (city.getSatisfaction() < 50) {
+        if (city.getSatisfaction() < 50)
             System.out.println("GAME OVER — People revolted! Satisfaction: " + city.getSatisfaction() + "%");
-        }
-        if (city.getBudget() <= 0) {
+        if (city.getBudget() <= 0)
             System.out.println("GAME OVER — City bankrupt! Budget: €" + city.getBudget());
-        }
-        if (city.getYear() > 3) {
+        if (city.getYear() > 3)
             System.out.println("YOU WIN — Survived 3 years!");
-        }
     }
 
     public City getCity() {
