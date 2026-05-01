@@ -34,6 +34,7 @@ public abstract class Ministry {
 
     /** Generate monthly report */
     public abstract Report generateReport(int month, int year);
+    public abstract Event generateEvent(int day, Severity severity);
 
     /** Clear event log — start fresh each month */
     public void clearEventLog() {
@@ -42,5 +43,8 @@ public abstract class Ministry {
 
     public String getName() {
         return name;
+    }
+    public List<Event> getEventLog() {
+        return eventLog;
     }
 }

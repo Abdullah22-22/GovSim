@@ -7,7 +7,6 @@ public class Main {
 
         try {
             PrintStream fileOut = new PrintStream(new FileOutputStream("output.txt"));
-
             PrintStream console = System.out;
 
             System.setOut(new PrintStream(new java.io.OutputStream() {
@@ -26,11 +25,7 @@ public class Main {
             e.printStackTrace();
         }
 
-        SimuEngine engine = new SimuEngine(1000000);
-
-        // Run 12 months — 1 full year
-        for (int i = 0; i < 12; i++) {
-            engine.runMonth();
-        }
+        SimuEngine engine = new SimuEngine();
+        engine.start();
     }
 }

@@ -52,4 +52,13 @@ public class PopulationMinistry extends Ministry {
         report.setRating(rating);
         return report;
     }
+
+    @Override
+    public Event generateEvent(int day, Severity severity) {
+        List<String> list = severity == Severity.DANGEROUS
+                ? DANGEROUS_EVENTS : NORMAL_EVENTS;
+        String desc = list.get(random.nextInt(list.size()));
+        return new Event(name, desc, severity, day);
+    }
 }
+

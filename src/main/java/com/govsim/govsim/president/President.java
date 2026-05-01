@@ -94,9 +94,9 @@ public class President {
         for (Report r : reports) {
             System.out.println("\n========================================");
             System.out.println("MONTHLY REVIEW — " + r.getMinistry() + " Ministry");
-            System.out.println("Rating: " + r.getRating() + "%" +
-                    " | Resolved: " + r.getResolved() +
-                    " | Ignored: "  + r.getUnresolved());
+            System.out.printf("Rating: %.0f%%", r.getRating());
+            System.out.println(" | Resolved: " + r.getResolved() +
+                    " | Ignored: " + r.getUnresolved());
             System.out.println("========================================");
 
             // Get 3 AI options for this ministry
