@@ -26,7 +26,9 @@ public class ReportGenerator {
             int solved = r.getResolved();
             double score = r.getRating();
 
+
             System.out.println(name + "\t\t" + count + "\t" + solved + "\t\t" + (int)score + "%");
+
 
             totalEvents += count;
             totalResolved += solved;
@@ -39,12 +41,16 @@ public class ReportGenerator {
         System.out.println("Total Events:    " + totalEvents);
         System.out.println("Total Resolved:  " + totalResolved);
         System.out.println("Total Ignored:   " + (totalEvents - totalResolved));
+
+
+
         System.out.println("Overall Rating:  " + (int)overallRating + "%");
         System.out.println("========================================");
 
         System.out.println("Budget:       EUR " + (int)city.getBudget());
         System.out.println("Satisfaction: " + (int)city.getSatisfaction() + "%");
-        System.out.println("Population:   102,500");
+                System.out.println("Population:" + city.getPopulation());
+
         System.out.println("========================================");
     }
 }

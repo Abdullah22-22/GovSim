@@ -6,7 +6,6 @@ import com.govsim.govsim.ministry.*;
 import java.util.HashMap;
 import java.util.Map;
 
-
 /** SP2 — Routes each Event to the correct Ministry */
 public class EventRouter {
 

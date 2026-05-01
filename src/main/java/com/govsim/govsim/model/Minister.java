@@ -1,5 +1,8 @@
 package com.govsim.govsim.model;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /** A government minister responsible for one ministry */
 public class Minister {
 
@@ -8,6 +11,9 @@ public class Minister {
     private double score;
     private int warnings;
     private String status;
+
+    /** Monthly reports — used for annual review */
+    private List<Report> monthlyReports = new ArrayList<>();
 
     /** Creates a new Minister */
     public Minister(String name, String ministry) {
@@ -39,6 +45,10 @@ public class Minister {
         return status;
     }
 
+    public List<Report> getMonthlyReports() {
+        return monthlyReports;
+    }
+
     // Setters
     public void setScore(double score) {
         this.score = score;
@@ -50,6 +60,11 @@ public class Minister {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    /** Save monthly report — for annual review */
+    public void addMonthlyReport(Report r) {
+        monthlyReports.add(r);
     }
 
     // Export

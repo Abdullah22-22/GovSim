@@ -2,26 +2,34 @@ package com.govsim.govsim.simulation;
 
 import com.govsim.govsim.model.Event;
 import com.govsim.govsim.model.Severity;
+import com.govsim.govsim.ministry.*;
 import java.util.*;
 
 /** SP1 — Generates random daily events for each ministry */
 public class EventGenerator {
 
     private static final Random random = new Random();
+    private Map<String, Ministry> ministryMap = new HashMap<>();
 
     // Chance % that each ministry gets an event per day
     private static final Map<String, Integer> MINISTRY_CHANCE = new LinkedHashMap<>();
 
     static {
-        MINISTRY_CHANCE.put("Interior", 40);
-        MINISTRY_CHANCE.put("Defense", 30);
-        MINISTRY_CHANCE.put("Finance", 35);
-        MINISTRY_CHANCE.put("Population", 40);
-        MINISTRY_CHANCE.put("Health", 35);
+        MINISTRY_CHANCE.put("Interior",   15);
+        MINISTRY_CHANCE.put("Defense",    10);
+        MINISTRY_CHANCE.put("Finance",    12);
+        MINISTRY_CHANCE.put("Population", 15);
+        MINISTRY_CHANCE.put("Health",     12);
     }
 
     // Dangerous event chance %
-    private int dangerChance = 15;
+    private int dangerChance = 5;
+
+    public void setMinistries(List<Ministry> ministries) {
+        for (Ministry m : ministries) {
+            ministryMap.put(m.getName(), m);
+        }
+    }
 
 
     /** Generates events for all ministries on a given day */
@@ -37,8 +45,10 @@ public class EventGenerator {
                         ? Severity.DANGEROUS
                         : Severity.NORMAL;
 
-                dailyEvents.add(
-                        new Event(ministry, "Event from " + ministry, severity, day));
+                Ministry m = ministryMap.get(ministry);
+                if (m != null) {
+                    dailyEvents.add(m.generateEvent(day, severity));
+                }
             }
         }
 

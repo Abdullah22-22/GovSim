@@ -12,6 +12,8 @@ public class City {
     private double monthlyIncome = 50000;
     private double monthlyExpenses = 20000;
 
+    private int population = 100000;
+
     /** Creates a new City */
     public City(double budget) {
         this.budget = budget;
@@ -23,19 +25,26 @@ public class City {
 
     // Getters
     public double getBudget() {
+
         return budget;
     }
 
     public double getSatisfaction() {
+
         return satisfaction;
     }
 
     public int getMonth() {
+
         return month;
     }
 
     public int getYear() {
         return year;
+    }
+
+    public int getPopulation() {
+        return population;
     }
 
     public void applyMonthlyFinance() {
@@ -60,10 +69,16 @@ public class City {
         }
     }
 
+    public void setPopulation(int p) {
+        this.population = p;
+    }
+
     // Export
     @Override
     public String toString() {
         return "City | Month:" + month + " Year:" + year +
-                " Budget:€" + budget + " Satisfaction:" + satisfaction + "%";
+                " Budget:€" + budget +
+                " Satisfaction:" + satisfaction + "%" +
+                " Population:" + population;
     }
 }

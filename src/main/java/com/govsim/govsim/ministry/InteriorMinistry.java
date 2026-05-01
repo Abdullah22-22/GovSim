@@ -65,6 +65,14 @@ public class InteriorMinistry extends Ministry {
         return report;
     }
 
+    @Override
+    public void clearEventLog() {
+        eventLog.clear();
+        handled = 0;
+        escalated = 0;
+    }
+
+
     /** Generate random event */
     public Event generateEvent(int day, Severity severity) {
         List<String> list = severity == Severity.DANGEROUS
