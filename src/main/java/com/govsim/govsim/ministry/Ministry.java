@@ -3,6 +3,7 @@ package com.govsim.govsim.ministry;
 import com.govsim.govsim.model.Event;
 import com.govsim.govsim.model.Report;
 import com.govsim.govsim.model.Severity;
+import com.govsim.govsim.president.President;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -39,5 +40,13 @@ public abstract class Ministry {
 
     public String getName() {
         return name;
+    }
+
+    public List<Event> getEventLog() {
+        return eventLog;
+    }
+
+    public void setPresident(President president) {
+        this.president = president;
     }
 }

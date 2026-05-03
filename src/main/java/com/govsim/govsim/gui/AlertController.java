@@ -1,7 +1,6 @@
-// God help me for i'm about to write the most cursed code in the history of programming
-
-
+// AlertController for managing alert displays in the GUI
 package com.govsim.govsim.gui;
+
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 
@@ -11,51 +10,57 @@ import com.govsim.govsim.president.President;
 import com.govsim.govsim.ministry.DefenseMinistry;
 import com.govsim.govsim.ministry.HealthMinistry;
 
-
-// controller for the gui and the colors and everything else 
-// mind you i'm doing this in a sober and with zero idea how to do this in a good way, so please don't judge 
-//  the code i will refactor this later, but for now, this is the only way i can do it without breaking my brain
-
-
+/**
+ * Controller for alert display and styling
+ */
 public class AlertController {
     
     @FXML
     private Label alertLabel;
 
     private Timer timer;
-    private Ministry defenseMinistry;
-    private Ministry healthMinistry;
-    private President president;
+    private DashboardController dashboardController;
 
-    public AlertController() {
-
-        defenseMinistry = new DefenseMinistry(defenseMinistry);
-        healthMinistry = new HealthMinistry(healthMinistry);
-        president = new President(defenseMinistry, healthMinistry);
-
+    /**
+     * Sets the dashboard controller reference
+     * @param dashboardController the dashboard controller
+     */
+    public void setDashboardController(DashboardController dashboardController) {
+        this.dashboardController = dashboardController;
     }
 
+    /**
+     * Shows an alert with a specific message and severity level
+     * @param message the alert message
+     * @param severity the severity level (normal, dangerous, warning)
+     */
     public void showAlert(String message, String severity) {
-        alertLabel.setText(message);
-        switch (severity.toLowerCase()) {
-            case "normal":
-                alertLabel.setStyle("-fx-background-color: green; -fx-text-fill: white;");
-                break;
-            case "dangerous":
-                alertLabel.setStyle("-fx-background-color: red; -fx-text-fill: white;");
-                break;
-            default:
-                alertLabel.setStyle("-fx-background-color: gray; -fx-text-fill: white;");
-                break;
-
-
+        if (alertLabel != null) {
+            alertLabel.setText(message);
+            switch (severity.toLowerCase()) {
+                case "normal":
+                    alertLabel.setStyle("-fx-background-color: #27ae60; -fx-text-fill: white; -fx-padding: 10;");
+                    break;
+                case "dangerous":
+                    alertLabel.setStyle("-fx-background-color: #e74c3c; -fx-text-fill: white; -fx-padding: 10;");
+                    break;
+                case "warning":
+                    alertLabel.setStyle("-fx-background-color: #f39c12; -fx-text-fill: white; -fx-padding: 10;");
+                    break;
+                default:
+                    alertLabel.setStyle("-fx-background-color: #95a5a6; -fx-text-fill: white; -fx-padding: 10;");
+                    break;
+            }
         }
-
     }
+
+    /**
+     * Clears the alert
+     */
     public void clearAlert() {
-        alertLabel.setText("");
-        alertLabel.setStyle("");
+        if (alertLabel != null) {
+            alertLabel.setText("");
+            alertLabel.setStyle("");
+        }
     }
-
-
 }
