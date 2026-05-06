@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" 
+            fx:controller="com.govsim.govsim.gui.DashboardController" stylesheets="@../css/dashboard.css">
+    
+    <!-- TOP HEADER WITH STATS -->
+    <top>
+        <HBox style="-fx-padding: 15 20 15 20; -fx-background-color: #0f1419; -fx-border-color: #1a2f4d; -fx-border-width: 0 0 1 0;" spacing="40">
+            <Label text="⚙ GOVSIM" style="-fx-text-fill: #ffffff; -fx-font-size: 16; -fx-font-weight: bold;"/>
+            <VBox spacing="2" alignment="CENTER"><Label text="BUDGET" style="-fx-text-fill: #7f8fa3; -fx-font-size: 9;"/><Label fx:id="budgetLabel" text="1,000" style="-fx-text-fill: #27ae60; -fx-font-size: 14; -fx-font-weight: bold;"/></VBox>
+            <VBox spacing="2" alignment="CENTER"><Label text="SATISFACTION" style="-fx-text-fill: #7f8fa3; -fx-font-size: 9;"/><Label fx:id="satisfactionLabel" text="100" style="-fx-text-fill: #27ae60; -fx-font-size: 14; -fx-font-weight: bold;"/></VBox>
+            <VBox spacing="2" alignment="CENTER"><Label text="POPULATION" style="-fx-text-fill: #7f8fa3; -fx-font-size: 9;"/><Label fx:id="populationLabel" text="50000" style="-fx-text-fill: #f1c40f; -fx-font-size: 14; -fx-font-weight: bold;"/></VBox>
+            <VBox spacing="2" alignment="CENTER"><Label text="MONTH / YEAR" style="-fx-text-fill: #7f8fa3; -fx-font-size: 9;"/><Label fx:id="monthYearLabel" text="1 / Year 1" style="-fx-text-fill: #3498db; -fx-font-size: 14; -fx-font-weight: bold;"/></VBox>
+            <VBox spacing="2" alignment="CENTER"><Label text="DAY" style="-fx-text-fill: #7f8fa3; -fx-font-size: 9;"/><Label fx:id="dayLabel" text="1 / 30" style="-fx-text-fill: #3498db; -fx-font-size: 14; -fx-font-weight: bold;"/></VBox>
+            <Region HBox.hgrow="ALWAYS"/>
+            <HBox spacing="8" alignment="CENTER_RIGHT">
+                <Button fx:id="pauseBtn" text="❚❚" prefWidth="35" style="-fx-font-size: 12; -fx-background-color: #3498db; -fx-text-fill: #ffffff;" onAction="#handlePause"/>
+                <Button fx:id="resumeBtn" text="▶" prefWidth="35" style="-fx-font-size: 12; -fx-background-color: #e74c3c; -fx-text-fill: #ffffff; -fx-opacity: 0.5;" onAction="#handleResume" disable="true"/>
+                <Button fx:id="speedBtn" text="2×" prefWidth="35" style="-fx-font-size: 12; -fx-background-color: #1a1f3a; -fx-text-fill: #ffffff;" onAction="#handleSpeedToggle"/>
+            </HBox>
+        </HBox>
+    </top>
+    
+    <!-- MAIN CONTENT - 3 PANEL LAYOUT -->
+    <center>
+        <HBox spacing="0" style="-fx-background-color: #0f1419;">
+            
+            <!-- LEFT PANEL: MINISTRIES -->
+            <VBox style="-fx-background-color: #0f1419; -fx-border-color: #1a2f4d; -fx-border-width: 0 1 0 0; -fx-padding: 15; -fx-pref-width: 280;" spacing="10">
+                <Label text="MINISTRIES — SERVICE POINTS" style="-fx-text-fill: #ffffff; -fx-font-size: 12; -fx-font-weight: bold;"/>
+                <ScrollPane style="-fx-background: transparent; -fx-background-color: transparent; -fx-border-style: none;" fitToWidth="true">
+                    <VBox fx:id="ministriesContainer" spacing="8" style="-fx-padding: 0;"/>
+                </ScrollPane>
+                <Separator style="-fx-padding: 10 0 10 0;"/>
+                <Label text="LIVE INCIDENTS" style="-fx-text-fill: #ffffff; -fx-font-size: 12; -fx-font-weight: bold;"/>
+                <VBox fx:id="incidentsContainer" spacing="5" style="-fx-padding: 5 0 0 0;"/>
+            </VBox>
+            
+            <!-- CENTER PANEL: CITY MAP -->
+            <VBox spacing="15" style="-fx-background-color: #0f1419; -fx-padding: 20;" HBox.hgrow="ALWAYS">
+                <Label text="CITY MAP — LIVE OVERVIEW" style="-fx-text-fill: #ffffff; -fx-font-size: 14; -fx-font-weight: bold;"/>
+                <VBox spacing="15" alignment="TOP_CENTER">
+                    <HBox spacing="15" alignment="CENTER">
+                        <VBox spacing="5" alignment="CENTER" style="-fx-border-color: #3a4a5f; -fx-border-width: 2; -fx-background-color: #1a1f3a; -fx-padding: 20; -fx-pref-width: 110; -fx-pref-height: 110;"><Label text="🏠" style="-fx-font-size: 28;"/><Label text="INTERIOR" style="-fx-text-fill: #ffffff; -fx-font-size: 10; -fx-font-weight: bold;"/><Label fx:id="interiorStatusLabel" text="100" style="-fx-text-fill: #27ae60; -fx-font-size: 12; -fx-font-weight: bold;"/></VBox>
+                        <VBox spacing="5" alignment="CENTER" style="-fx-border-color: #3a4a5f; -fx-border-width: 2; -fx-background-color: #1a1f3a; -fx-padding: 20; -fx-pref-width: 110; -fx-pref-height: 110;"><Label text="⚔" style="-fx-font-size: 28;"/><Label text="DEFENSE" style="-fx-text-fill: #ffffff; -fx-font-size: 10; -fx-font-weight: bold;"/><Label fx:id="defenseStatusLabel" text="100" style="-fx-text-fill: #27ae60; -fx-font-size: 12; -fx-font-weight: bold;"/></VBox>
+                        <VBox spacing="5" alignment="CENTER" style="-fx-border-color: #3a4a5f; -fx-border-width: 2; -fx-background-color: #1a1f3a; -fx-padding: 20; -fx-pref-width: 110; -fx-pref-height: 110;"><Label text="💰" style="-fx-font-size: 28;"/><Label text="FINANCE" style="-fx-text-fill: #ffffff; -fx-font-size: 10; -fx-font-weight: bold;"/><Label fx:id="financeStatusLabel" text="100" style="-fx-text-fill: #27ae60; -fx-font-size: 12; -fx-font-weight: bold;"/></VBox>
+                    </HBox>
+                    <HBox spacing="15" alignment="CENTER">
+                        <VBox spacing="5" alignment="CENTER" style="-fx-border-color: #3a4a5f; -fx-border-width: 2; -fx-background-color: #1a1f3a; -fx-padding: 20; -fx-pref-width: 110; -fx-pref-height: 110;"><Label text="👥" style="-fx-font-size: 28;"/><Label text="POPULATION" style="-fx-text-fill: #ffffff; -fx-font-size: 10; -fx-font-weight: bold;"/><Label fx:id="populationStatusLabel" text="100" style="-fx-text-fill: #27ae60; -fx-font-size: 12; -fx-font-weight: bold;"/></VBox>
+                        <VBox spacing="5" alignment="CENTER" style="-fx-border-color: #3a4a5f; -fx-border-width: 2; -fx-background-color: #1a1f3a; -fx-padding: 20; -fx-pref-width: 110; -fx-pref-height: 110;"><Label text="🏥" style="-fx-font-size: 28;"/><Label text="HEALTH" style="-fx-text-fill: #ffffff; -fx-font-size: 10; -fx-font-weight: bold;"/><Label fx:id="healthStatusLabel" text="100" style="-fx-text-fill: #27ae60; -fx-font-size: 12; -fx-font-weight: bold;"/></VBox>
+                        <VBox spacing="5" alignment="CENTER" style="-fx-border-color: #3a4a5f; -fx-border-width: 2; -fx-background-color: #1a1f3a; -fx-padding: 20; -fx-pref-width: 110; -fx-pref-height: 110;"><Label text="🏛" style="-fx-font-size: 28;"/><Label text="PALACE" style="-fx-text-fill: #ffffff; -fx-font-size: 10; -fx-font-weight: bold;"/><Label text="—" style="-fx-text-fill: #7f8fa3; -fx-font-size: 12;"/></VBox>
+                    </HBox>
+                </VBox>
+                <Region VBox.vgrow="ALWAYS"/>
+            </VBox>
+            
+            <!-- RIGHT PANEL: DECISIONS & ADVISOR -->
+            <VBox style="-fx-background-color: #0f1419; -fx-border-color: #1a2f4d; -fx-border-width: 0 0 0 1; -fx-padding: 15; -fx-pref-width: 280;" spacing="10">
+                <Label text="⚡ AI ADVISOR" style="-fx-text-fill: #e74c3c; -fx-font-size: 12; -fx-font-weight: bold;"/>
+                <Label fx:id="advisorDescription" text="All systems operational" style="-fx-text-fill: #7f8fa3; -fx-font-size: 10; -fx-wrap-text: true;"/>
+                <Separator style="-fx-padding: 10 0 10 0;"/>
+                <Label text="DECISIONS" style="-fx-text-fill: #ffffff; -fx-font-size: 12; -fx-font-weight: bold;"/>
+                <ScrollPane style="-fx-background: transparent; -fx-background-color: transparent; -fx-border-style: none;" fitToWidth="true" VBox.vgrow="ALWAYS">
+                    <VBox fx:id="decisionsContainer" spacing="8" style="-fx-padding: 0;"/>
+                </ScrollPane>
+                <Button text="✓ CONFIRM DECISION" style="-fx-font-size: 12; -fx-padding: 12 20 12 20; -fx-background-color: #3498db; -fx-text-fill: white; -fx-font-weight: bold;" onAction="#handleConfirmDecision" prefWidth="9999"/>
+            </VBox>
+        </HBox>
+    </center>
+    
+    <!-- BOTTOM ALERT BANNER -->
+    <bottom>
+        <HBox fx:id="alertBanner" style="-fx-background-color: #27ae60; -fx-padding: 15; -fx-alignment: center;" spacing="10">
+            <Label fx:id="alertLabel" text="✓ ALL SYSTEMS NOMINAL" style="-fx-text-fill: #ffffff; -fx-font-weight: bold; -fx-font-size: 12;"/>
+        </HBox>
+    </bottom>
+</BorderPane>

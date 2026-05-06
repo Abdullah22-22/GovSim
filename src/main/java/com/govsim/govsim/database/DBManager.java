@@ -7,7 +7,7 @@ public class DBManager {
 
     private  static  final String URL  = "jdbc:mysql://localhost:3306/govsim";
     private static final String USER = "root";
-    private static final String PASS = "12345";
+    private static final String PASS = "2004";
 
     private static Connection connection;
 

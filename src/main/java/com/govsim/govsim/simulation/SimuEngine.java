@@ -11,6 +11,18 @@ import java.util.Scanner;
 /** Main simulation engine — runs the full game loop */
 public class SimuEngine {
 
+    // ═════════════════════════════════════════════════════
+    // LISTENER INTERFACE FOR GUI UPDATES
+    // ═════════════════════════════════════════════════════
+    public interface SimulationListener {
+        void onDayAdvanced(int day, int month, int year);
+        void onDangerousEvent(Event event, DecisionOption[] options);
+        void onDecisionApplied(DecisionOption chosen);
+        void onGameOver(String reason);
+        void onStatsUpdated();
+        void onMonthEnd();
+    }
+
     private final Scanner         scanner     = new Scanner(System.in);
     private City                  city;
     private EventGenerator        generator;
@@ -28,6 +40,24 @@ public class SimuEngine {
     private final ReportDAO       reportDAO   = new ReportDAO();
     private final DecisionDAO     decisionDAO = new DecisionDAO();
     private int userId = -1;
+
+    // ═════════════════════════════════════════════════════
+    // GUI STATE TRACKING
+    // ═════════════════════════════════════════════════════
+    private int   currentDay  = 1;
+    private final int daysInMonth = 30;
+    private Event  pendingDangerousEvent = null;
+    private DecisionOption[] currentOptions = null;
+
+    // Ministry health tracking
+    private int interiorHealth   = 100;
+    private int defenseHealth    = 100;
+    private int financeHealth    = 100;
+    private int populationHealth = 100;
+    private int healthHealth     = 100;
+
+    // Listener for GUI updates
+    private SimulationListener listener = null;
 
     // ─────────────────────────────────────────────────────
     // CONSTRUCTORS
@@ -146,6 +176,55 @@ public class SimuEngine {
         router.addMinistry(ministry.getName(), ministry);
     }
 
+    // ═════════════════════════════════════════════════════
+    // GUI INITIALIZATION — Load or create new game
+    // ═════════════════════════════════════════════════════
+
+    public void initializeForGUI(int userId) {
+        this.userId = userId;
+
+        if (cityDAO.hasSave(userId)) {
+            city = cityDAO.load(userId);
+            System.out.println("[Engine] Loaded saved city.");
+        } else {
+            city = new City(1_000_000);
+            System.out.println("[Engine] New game started.");
+        }
+
+        president = new President(city);
+        generator = new EventGenerator();
+        router    = new EventRouter();
+
+        setupMinistries();
+
+        List<Minister> savedMinisters = ministerDAO.loadAll(userId);
+        if (!savedMinisters.isEmpty()) {
+            for (int i = 0; i < ministers.size() && i < savedMinisters.size(); i++) {
+                ministers.get(i).setScore(savedMinisters.get(i).getScore());
+                ministers.get(i).setWarnings(savedMinisters.get(i).getWarnings());
+                ministers.get(i).setStatus(savedMinisters.get(i).getStatus());
+            }
+        }
+
+        generator.setMinistries(ministries);
+        currentDay = 1;
+        resetMinistryHealth();
+    }
+
+    // ═════════════════════════════════════════════════════
+    // GUI LISTENER MANAGEMENT
+    // ═════════════════════════════════════════════════════
+
+    public void setSimulationListener(SimulationListener listener) {
+        this.listener = listener;
+    }
+
+    private void notifyListener(Runnable action) {
+        if (listener != null) {
+            action.run();
+        }
+    }
+
     /** Load saved minister data */
     public void loadMinisters(List<Minister> saved) {
         for (int i = 0; i < ministers.size() && i < saved.size(); i++) {
@@ -231,8 +310,154 @@ public class SimuEngine {
         checkGameOver();
     }
 
+    // ═════════════════════════════════════════════════════
+    // GUI GAME LOOP — Advance one day at a time
+    // ═════════════════════════════════════════════════════
+
+    public void advanceDayForGUI() {
+        currentDay++;
+        if (currentDay > daysInMonth) {
+            currentDay = 1;
+            endOfMonth();
+            city.nextMonth();
+            notifyListener(() -> listener.onMonthEnd());
+        }
+
+        List<Event> consequences = president.processDailyConsequences(currentDay);
+        for (Event ce : consequences) {
+            router.route(ce);
+            handleDangerousEventForGUI(ce);
+        }
+
+        List<Event> dailyEvents = generator.generateDailyEvents(currentDay);
+        for (Event event : dailyEvents) {
+            router.route(event);
+            reduceMinistryHealth(event.getMinistry(), event.getSeverity());
+
+            if (event.getSeverity() == Severity.DANGEROUS) {
+                handleDangerousEventForGUI(event);
+            }
+        }
+
+        generatePassiveIncome();
+        notifyListener(() -> listener.onStatsUpdated());
+    }
+
+    public void applyEventDecisionForGUI(int optionIndex) {
+        if (optionIndex < 0 || optionIndex >= currentOptions.length) {
+            return;
+        }
+
+        DecisionOption chosen = currentOptions[optionIndex];
+        Decision decision = president.applyEventDecision(
+                pendingDangerousEvent, chosen, optionIndex, currentDay, router);
+
+        eventDAO.saveAll(userId, List.of(pendingDangerousEvent));
+        decisionDAO.save(userId, decision, city.getSatisfaction());
+
+        System.out.println("[Engine] Decision applied: " + chosen.title
+                + " | Cost: " + chosen.cost
+                + " | Budget: " + city.getBudget());
+
+        notifyListener(() -> listener.onDecisionApplied(chosen));
+
+        pendingDangerousEvent = null;
+        currentOptions        = null;
+    }
+
+    private void handleDangerousEventForGUI(Event event) {
+        pendingDangerousEvent = event;
+        currentOptions = president.getEventOptions(event);
+        
+        System.out.println("[Engine] Dangerous event: " + event.getDescription());
+        
+        notifyListener(() -> listener.onDangerousEvent(event, currentOptions));
+    }
+
+    private void endOfMonth() {
+        city.applyMonthlyFinance();
+
+        List<Report> reports = new ArrayList<>();
+        for (int i = 0; i < ministries.size(); i++) {
+            Report r = ministries.get(i).generateReport(city.getMonth(), city.getYear());
+            reports.add(r);
+            ministers.get(i).addMonthlyReport(r);
+        }
+
+        cityDAO.save(userId, city);
+        ministerDAO.saveAll(userId, ministers);
+        reportDAO.saveMonthly(userId, reports);
+
+        for (Ministry m : ministries) {
+            eventDAO.saveAll(userId, m.getEventLog());
+            m.clearEventLog();
+        }
+
+        System.out.println("[Engine] End of month " + city.getMonth() + " saved.");
+    }
+
+    private void generatePassiveIncome() {
+        double base                = 5000;
+        double avgHealth           = (interiorHealth + defenseHealth + financeHealth
+                                      + populationHealth + healthHealth) / 5.0;
+        double healthBonus         = (avgHealth / 100.0) * 500;
+        double satisfactionMult    = city.getSatisfaction() / 100.0;
+        double dailyIncome         = (base + healthBonus) * satisfactionMult;
+        city.setBudget(city.getBudget() + dailyIncome);
+    }
+
+    private void reduceMinistryHealth(String ministryName, Severity severity) {
+        int reduction = severity == Severity.DANGEROUS ? 15 : 5;
+        switch (ministryName) {
+            case "Interior"   -> interiorHealth   = Math.max(0, interiorHealth   - reduction);
+            case "Defense"    -> defenseHealth    = Math.max(0, defenseHealth    - reduction);
+            case "Finance"    -> financeHealth    = Math.max(0, financeHealth    - reduction);
+            case "Population" -> populationHealth = Math.max(0, populationHealth - reduction);
+            case "Health"     -> healthHealth     = Math.max(0, healthHealth     - reduction);
+        }
+    }
+
+    private void resetMinistryHealth() {
+        interiorHealth   = 100;
+        defenseHealth    = 100;
+        financeHealth    = 100;
+        populationHealth = 100;
+        healthHealth     = 100;
+    }
+
+    public boolean checkGameOverForGUI() {
+        if (city.getSatisfaction() < 50) {
+            notifyListener(() -> listener.onGameOver("GAME OVER — People revolted! Satisfaction: " + (int)city.getSatisfaction() + "%"));
+            return true;
+        }
+        if (city.getBudget() <= 0) {
+            notifyListener(() -> listener.onGameOver("GAME OVER — City bankrupt!"));
+            return true;
+        }
+        if (city.getYear() > 3) {
+            notifyListener(() -> listener.onGameOver("YOU WIN — Survived 3 years!"));
+            return true;
+        }
+        return false;
+    }
+
+    // ═════════════════════════════════════════════════════
+    // STATE GETTERS FOR GUI
+    // ═════════════════════════════════════════════════════
+
+    public int getCurrentDay() { return currentDay; }
+    public int getDaysInMonth() { return daysInMonth; }
+    public Event getPendingDangerousEvent() { return pendingDangerousEvent; }
+    public DecisionOption[] getCurrentOptions() { return currentOptions; }
+    
+    public int getInteriorHealth() { return interiorHealth; }
+    public int getDefenseHealth() { return defenseHealth; }
+    public int getFinanceHealth() { return financeHealth; }
+    public int getPopulationHealth() { return populationHealth; }
+    public int getHealthHealth() { return healthHealth; }
+
     // ─────────────────────────────────────────────────────
-    // DANGEROUS EVENT — show options and get player choice
+    // DANGEROUS EVENT — show options and get player choice (Console)
     // ─────────────────────────────────────────────────────
 
     private void handleDangerousEvent(Event event, int day) {
