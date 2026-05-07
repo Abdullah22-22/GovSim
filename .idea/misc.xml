@@ -4,6 +4,10 @@
     <option name="sdkName" value="Python 3.14" />
   </component>
   <component name="ExternalStorageConfigurationManager" enabled="true" />
+  <component name="JavadocGenerationManager">
+    <option name="OUTPUT_DIRECTORY" value="$PROJECT_DIR$/.." />
+    <option name="OPTION_SCOPE" value="private" />
+  </component>
   <component name="MavenProjectsManager">
     <option name="originalFiles">
       <list>
