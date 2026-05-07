@@ -1,5 +1,3 @@
-<<<<<<< Updated upstream
-=======
 package com.govsim.govsim.gui;
 
 import javafx.application.Application;
@@ -108,4 +106,3 @@ public class MainApp extends Application {
         launch(args);
     }
 }
->>>>>>> Stashed changes

@@ -1,11 +1,5 @@
-/*  
+package com.govsim.govsim.gui;
 
-<<<<<<< Updated upstream
-
-
-Third one 
-*/
-=======
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -568,4 +562,3 @@ public class DashboardController implements SimulationListener {
         if (mainApp != null) mainApp.logout();
     }
 }
->>>>>>> Stashed changes

@@ -1,6 +1,3 @@
-<<<<<<< Updated upstream
-/*  
-=======
 package com.govsim.govsim.gui;
 
 import javafx.fxml.FXML;
@@ -31,17 +28,16 @@ public class LoginController {
     public void setMainApp(MainApp mainApp) {
         this.mainApp = mainApp;
     }
->>>>>>> Stashed changes
 
     // ─────────────────────────────────────────────────────
     // LOGIN
     // ─────────────────────────────────────────────────────
 
+    @FXML
+    private void handleLogin() {
+        String username = usernameField.getText().trim();
+        String password = passwordField.getText();
 
-<<<<<<< Updated upstream
-This is the second 
-*/
-=======
         if (!validateInput(username, password)) return;
 
         User user = userDAO.login(username, password);
@@ -115,4 +111,3 @@ This is the second
         passwordField.clear();
     }
 }
->>>>>>> Stashed changes
