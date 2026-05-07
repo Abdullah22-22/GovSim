@@ -9,5 +9,8 @@
         <module name="govsim" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="GovSim (1)" target="21" />
+    </bytecodeTargetLevel>
   </component>
 </project>
