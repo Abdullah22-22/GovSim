@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox
+        xmlns="http://javafx.com/javafx/21"
+        xmlns:fx="http://javafx.com/fxml/1"
+        fx:controller="com.govsim.govsim.gui.EventsSidebarController"
+        styleClass="sidebar-container sidebar-right-border"
+        spacing="0" VBox.vgrow="ALWAYS">
+
+    <!-- Header -->
+    <HBox styleClass="sidebar-header" spacing="8" alignment="CENTER_LEFT">
+        <VBox spacing="1">
+            <Label text="DAILY EVENTS" styleClass="sidebar-title"/>
+            <Label fx:id="eventCountLabel" text="0 events today" styleClass="sidebar-count-normal"/>
+        </VBox>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Label fx:id="eventsCountBadge" text="0" styleClass="sidebar-badge"/>
+        <Label text="📋" style="-fx-font-size: 16;"/>
+    </HBox>
+
+    <!-- Events list -->
+    <ScrollPane fitToWidth="true" styleClass="sidebar-scroll" VBox.vgrow="ALWAYS">
+        <VBox fx:id="eventsContainer" spacing="6" styleClass="sidebar-events-list">
+            <padding><Insets top="10" right="10" bottom="10" left="10"/></padding>
+        </VBox>
+    </ScrollPane>
+
+</VBox>

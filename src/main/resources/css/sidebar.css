@@ -1,0 +1,92 @@
+/* ═══════════════════════════════════════════════════
+   GovSim — sidebar.css
+   ═══════════════════════════════════════════════════ */
+
+/* ── SHARED — matches HTML .sidebar ── */
+.sidebar-container {
+    -fx-background-color: #0b1120;
+    -fx-border-color: #1d3054;
+    -fx-border-width: 0 1 0 0;
+    -fx-pref-width: 260;
+    -fx-min-width: 220;
+    -fx-max-width: 280;
+}
+
+/* matches HTML .sidebar-head { background: #0d1f3c; border-bottom: 1px solid #1d3054; } */
+.sidebar-header {
+    -fx-background-color: #0d1f3c;
+    -fx-padding: 14 16 14 16;
+    -fx-border-color: #1d3054;
+    -fx-border-width: 0 0 1 0;
+    -fx-min-height: 48;
+    -fx-pref-height: 48;
+}
+
+.sidebar-title {
+    -fx-font-size: 11;
+    -fx-font-weight: bold;
+    -fx-text-fill: #e8f0ff;
+}
+
+.sidebar-scroll {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+    -fx-border-color: transparent;
+}
+.sidebar-scroll .viewport { -fx-background-color: transparent; }
+
+.sidebar-events-list { -fx-background-color: transparent; }
+
+.sidebar-ministry-tag { -fx-text-fill: #2d8ef5; -fx-font-size: 9; -fx-font-weight: bold; }
+
+/* ── AI SIDEBAR WAITING — matches HTML .ai-waiting ── */
+.sidebar-wait-card {
+    -fx-background-color: #0f1729;
+    -fx-padding: 24;
+    -fx-border-color: #1d3054;
+    -fx-border-width: 1;
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+    -fx-alignment: center;
+    -fx-spacing: 10;
+}
+
+/* ── AI SIDEBAR DANGER EVENT — matches HTML .ai-danger-header ── */
+.sidebar-event-card {
+    -fx-background-color: #2d050a;
+    -fx-padding: 12;
+    -fx-border-color: rgba(255,61,87,0.4);
+    -fx-border-width: 1;
+    -fx-background-radius: 6;
+    -fx-border-radius: 6;
+    -fx-spacing: 5;
+}
+
+/* ── AI OPTION CARDS — matches HTML .ai-option ── */
+.sidebar-option {
+    -fx-background-color: #0f1729;
+    -fx-padding: 10 12 10 12;
+    -fx-border-color: #1d3054;
+    -fx-border-width: 1;
+    -fx-cursor: hand;
+    -fx-spacing: 4;
+    -fx-background-radius: 6;
+    -fx-border-radius: 6;
+}
+.sidebar-option:hover {
+    -fx-border-color: #2d8ef5;
+    -fx-background-color: rgba(45,142,245,0.07);
+}
+
+/* matches HTML .ai-option.selected */
+.sidebar-option-selected {
+    -fx-background-color: rgba(45,142,245,0.12);
+    -fx-padding: 10 12 10 12;
+    -fx-border-color: #2d8ef5;
+    -fx-border-width: 2;
+    -fx-cursor: hand;
+    -fx-spacing: 4;
+    -fx-background-radius: 6;
+    -fx-border-radius: 6;
+    -fx-effect: dropshadow(gaussian, rgba(45,142,245,0.4), 14, 0.3, 0, 0);
+}
