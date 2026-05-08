@@ -69,6 +69,7 @@ public class DashboardController implements SimulationListener {
     private AISidebarController     aiSidebar;
 
     // ── App state ──
+    private javafx.scene.media.AudioClip activeSiren;
     private MainApp       mainApp;
     private int           userId               = -1;
     private SimuEngineGUI engine;
@@ -243,6 +244,18 @@ public class DashboardController implements SimulationListener {
         Platform.runLater(() -> {
             isPaused = true;
             updateButtonStates();
+            alertBanner.getScene().getRoot().getStyleClass().add("emergency-mode");
+
+            try {
+                activeSiren = new javafx.scene.media.AudioClip(
+                        getClass().getResource("/sounds/siren1.mp3").toExternalForm()
+                );
+                activeSiren.setVolume(0.5);
+                activeSiren.setCycleCount(javafx.scene.media.AudioClip.INDEFINITE);
+                activeSiren.play();
+            } catch (Exception e) {
+                System.err.println("Siren error: " + e.getMessage());
+            }
             showAlert("DANGEROUS: " + event.getMinistry() + " — " + event.getDescription(), "red");
             flashDangerAlert();
             startDangerPulse();
@@ -253,6 +266,8 @@ public class DashboardController implements SimulationListener {
     @Override
     public void onDecisionApplied(DecisionOption chosen) {
         Platform.runLater(() -> {
+            if (activeSiren != null) activeSiren.stop();
+            alertBanner.getScene().getRoot().getStyleClass().remove("emergency-mode");
             stopDangerPulse();
             isPaused = false;
             updateButtonStates();
@@ -362,10 +377,12 @@ public class DashboardController implements SimulationListener {
     private void stopDangerPulse() {
         if (pulseTimer != null) {
             pulseTimer.cancel();
+            pulseTimer.purge();
             pulseTimer = null;
         }
         if (dangerLight == null) return;
         Platform.runLater(() -> {
+            dangerLight.setStyle(null);
             dangerLight.getStyleClass().setAll("danger-light-off");
             if (dangerLightLabel != null)
                 dangerLightLabel.setStyle(

@@ -68,6 +68,12 @@
             <scope>test</scope>
         </dependency>
 
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-media</artifactId>
+            <version>21.0.6</version>
+        </dependency>
+
     </dependencies>
 
     <!-- ================= BUILD ================= -->
@@ -94,6 +100,10 @@
                 <configuration>
                     <!-- ✅ FIXED MAIN CLASS -->
                     <mainClass>com.govsim.govsim.gui.MainApp</mainClass>
+                    <options>
+                        <option>--add-modules</option>
+                        <option>javafx.media</option>
+                    </options>
                 </configuration>
 
             </plugin>
