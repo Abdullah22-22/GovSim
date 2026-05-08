@@ -266,9 +266,25 @@ public class DashboardController implements SimulationListener {
     @Override
     public void onDecisionApplied(DecisionOption chosen) {
         Platform.runLater(() -> {
-            if (activeSiren != null) activeSiren.stop();
-            alertBanner.getScene().getRoot().getStyleClass().remove("emergency-mode");
+            if (activeSiren != null) {
+                activeSiren.stop();
+            }
+
             stopDangerPulse();
+
+            var root = alertBanner.getScene().getRoot();
+            root.getStyleClass().removeAll(
+                    "emergency-mode",
+                    "emergency-blink-on",
+                    "emergency-blink-off",
+                    "emergency-blink-1",
+                    "emergency-blink-2"
+            );
+            if (dangerLight != null) {
+                dangerLight.setStyle(null);
+                dangerLight.getStyleClass().setAll("danger-light-off");
+            }
+
             isPaused = false;
             updateButtonStates();
             showAlert(chosen.title + ": " + chosen.description, "green");
@@ -350,25 +366,29 @@ public class DashboardController implements SimulationListener {
 
     private void startDangerPulse() {
         if (dangerLight == null) return;
-        final boolean[] on = {true};
+        final boolean[] toggle = {true};
+
         pulseTimer = new Timer(true);
         pulseTimer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
                 Platform.runLater(() -> {
-                    dangerLight.setStyle(on[0]
-                            ? "-fx-background-color: #ff0000; -fx-background-radius: 50;" +
-                            " -fx-min-width: 18; -fx-min-height: 18;" +
-                            " -fx-max-width: 18; -fx-max-height: 18;" +
-                            " -fx-effect: dropshadow(gaussian, #ff0000, 15, 0.8, 0, 0);"
-                            : "-fx-background-color: #3a3a3a; -fx-background-radius: 50;" +
-                            " -fx-min-width: 18; -fx-min-height: 18;" +
-                            " -fx-max-width: 18; -fx-max-height: 18;");
-                    if (dangerLightLabel != null)
-                        dangerLightLabel.setStyle(on[0]
-                                ? "-fx-text-fill: #ff0000; -fx-font-weight: bold;"
-                                : "-fx-text-fill: #3a3a3a; -fx-font-weight: bold;");
-                    on[0] = !on[0];
+
+                    var root = alertBanner.getScene().getRoot();
+
+
+                    root.getStyleClass().removeAll("emergency-blink-1", "emergency-blink-2", "emergency-mode");
+
+                    if (toggle[0]) {
+
+                        root.getStyleClass().add("emergency-blink-1");
+                        dangerLight.setStyle("-fx-background-color: #ff3d57; -fx-effect: dropshadow(gaussian, #ff3d57, 15, 0.5, 0, 0);");
+                    } else {
+                        root.getStyleClass().add("emergency-blink-2");
+                        dangerLight.setStyle("-fx-background-color: #1d3054; -fx-effect: none;");
+                    }
+
+                    toggle[0] = !toggle[0];
                 });
             }
         }, 0, 500);
