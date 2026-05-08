@@ -16,15 +16,15 @@ public class EventGenerator {
 
     static {
         MINISTRY_CHANCE.put("Interior",   15);
-        MINISTRY_CHANCE.put("Defense",    10);
-        MINISTRY_CHANCE.put("Finance",    12);
+        MINISTRY_CHANCE.put("Defense",    15);
+        MINISTRY_CHANCE.put("Finance",    15);
         MINISTRY_CHANCE.put("Population", 15);
-        MINISTRY_CHANCE.put("Health",     12);
+        MINISTRY_CHANCE.put("Health",     15);
 
     }
 
     // Dangerous event chance %
-    private int dangerChance = 10;
+    private int dangerChance = 20;
 
     public void setMinistries(List<Ministry> ministries) {
         for (Ministry m : ministries) {
