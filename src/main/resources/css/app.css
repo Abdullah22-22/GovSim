@@ -515,3 +515,60 @@
 }
 .btn-confirm-yellow:hover { -fx-background-color: #e6c000; }
 .popup-scroll { -fx-background: transparent; -fx-background-color: transparent; -fx-border-style: none; }
+
+
+/* Armin EMERGENCY MODE STYLES 🚨 */
+.emergency-mode {
+    -fx-background-color: #4a0505 !important; /*  red */
+    -fx-border-color: #ff3d57 !important;
+    -fx-border-width: 5;
+}
+
+.emergency-mode .sidebar-container,
+.emergency-mode .center-panel,
+.emergency-mode .main-body,
+.emergency-mode .topbar {
+    -fx-background-color: rgba(0, 0, 0, 0.4) !important;
+}
+
+.emergency-mode {
+    -fx-effect: dropshadow(gaussian, #ff3d57, 50, 0.5, 0, 0);
+}
+
+
+.building-card {
+    -fx-cursor: hand;
+}
+
+.building-card:hover {
+    -fx-scale-x: 1.05;
+    -fx-scale-y: 1.05;
+    -fx-translate-y: -5;
+    -fx-border-color: #00d4ff;
+    -fx-background-color: #1a2a44;
+    -fx-effect: dropshadow(gaussian, rgba(0, 212, 255, 0.4), 15, 0.3, 0, 0);
+}
+
+.building-palace:hover {
+    -fx-border-color: #ffd600;
+    -fx-effect: dropshadow(gaussian, rgba(255, 214, 0, 0.4), 15, 0.3, 0, 0);
+}
+
+.btn-confirm:hover {
+    -fx-scale-x: 1.03;
+    -fx-background-color: #1a7ee0;
+    -fx-effect: dropshadow(gaussian, rgba(45, 142, 245, 0.5), 10, 0, 0, 0);
+}
+
+.building-card:pressed, .btn-confirm:pressed {
+    -fx-scale-x: 0.98;
+    -fx-scale-y: 0.98;
+    -fx-effect: none;
+}
+
+.sidebar-option:hover {
+    -fx-background-color: rgba(0, 212, 255, 0.1);
+    -fx-border-color: #00d4ff;
+    -fx-border-width: 0 0 0 3;
+    -fx-translate-x: 5;
+}
