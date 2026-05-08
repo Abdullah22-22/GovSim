@@ -7,7 +7,7 @@ import java.sql.SQLException;
 /**
  * Manages database connections to MySQL server
  */
-public class DatabaseConnection {
+class DatabaseConnection {
     
     private static final String URL = "jdbc:mysql://localhost:3306/govsim";
     private static final String USER = "root";
