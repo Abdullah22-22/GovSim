@@ -247,7 +247,7 @@ public class SimuEngineGUI extends SimuEngine {
     private void reduceMinistryHealth(String name, Severity severity) {
         // Only dangerous events reduce ministry health by 5
         if (severity != Severity.DANGEROUS) return;
-        int r = 5;
+        int r = 12;
         switch (name) {
             case "Interior"   -> interiorHealth   = Math.max(0, interiorHealth   - r);
             case "Defense"    -> defenseHealth    = Math.max(0, defenseHealth    - r);
@@ -259,11 +259,11 @@ public class SimuEngineGUI extends SimuEngine {
 
     /** +1 recovery per day per ministry if no dangerous event today */
     private void recoverMinistryHealth() {
-        interiorHealth   = Math.min(100, interiorHealth   + 1);
-        defenseHealth    = Math.min(100, defenseHealth    + 1);
-        financeHealth    = Math.min(100, financeHealth    + 1);
-        populationHealth = Math.min(100, populationHealth + 1);
-        healthHealth     = Math.min(100, healthHealth     + 1);
+        interiorHealth   = Math.min(100, interiorHealth   + 2);
+        defenseHealth    = Math.min(100, defenseHealth    + 2);
+        financeHealth    = Math.min(100, financeHealth    + 2);
+        populationHealth = Math.min(100, populationHealth + 2);
+        healthHealth     = Math.min(100, healthHealth     + 2);
     }
 
     // ─────────────────────────────────────────────────────

@@ -1,5 +1,7 @@
 package com.govsim.govsim.database;
 
+import io.github.cdimascio.dotenv.Dotenv;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -7,15 +9,20 @@ import java.sql.SQLException;
 /**
  * Manages database connections to MySQL server
  */
-class DatabaseConnection {
-    
-    private static final String URL = "jdbc:mysql://localhost:3306/govsim";
-    private static final String USER = "root";
-    private static final String PASSWORD = "12345";
-    
+
+public class DatabaseConnection {
+
+    private static final Dotenv dotenv = Dotenv.load();
+
+    private static final String URL = dotenv.get("DB_URL");
+    private static final String USER = dotenv.get("DB_USER");
+    private static final String PASSWORD = dotenv.get("DB_PASSWORD");
+
+
+
     private static Connection connection;
     private static boolean initialized = false;
-    
+
     /**
      * Establishes connection to the database and initializes it if needed
      * @return Connection object
