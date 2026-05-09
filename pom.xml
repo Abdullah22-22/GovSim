@@ -98,13 +98,15 @@
                 <version>0.0.8</version>
 
                 <configuration>
-                    <!-- ✅ FIXED MAIN CLASS -->
+                    <!-- FIXED MAIN CLASS -->
                     <mainClass>com.govsim.govsim.gui.MainApp</mainClass>
                     <options>
                         <option>--add-modules</option>
                         <option>javafx.media</option>
                     </options>
                 </configuration>
+
+
 
             </plugin>
 
